@@ -8,8 +8,8 @@ import {
 import { useAuthStore } from '../store/useAuthStore';
 import { useNotificationStore } from '../services/useNotificationStore';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { PaymentFactory } from '../services/paymentFactory';
+import { PaymentFactory, PaymentRequest } from '../services/paymentAdapter';
+import { NotificationFactory } from '../services/notificationBridge';
 import { UIFactoryProvider } from '../layouts/uiFactory';
 import { CourseQueryBuilder } from '../services/courseQueryBuilder';
 
@@ -35,7 +35,6 @@ export default function Catalog() {
   const [paymentMethod, setPaymentMethod] = useState('stripe');
 
   const { signOut, profile, user } = useAuthStore();
-  const { addToast } = useNotificationStore();
   const navigate = useNavigate();
   const hasShownWelcome = useRef(false);
 
@@ -56,7 +55,7 @@ export default function Catalog() {
         .from('enrollments')
         .select('course_id')
         .eq('user_id', user.id)
-        .in('payment_status', ['paid', 'completed']); // Solo ocultar si ya está pagado/completado
+        .in('payment_status', ['paid', 'completed']);
       
       if (error) throw error;
       return data?.map(e => e.course_id) || [];
@@ -66,22 +65,39 @@ export default function Catalog() {
 
   useEffect(() => {
     if (!hasShownWelcome.current) {
-      addToast({ type: 'success', message: '¡Bienvenido de nuevo!' });
+      // 🌉 PATRÓN BRIDGE: Petición UI "Standard" usando "Toast"
+      const welcomeNotif = NotificationFactory.create('standard', 'toast');
+      welcomeNotif.notify('¡Bienvenido de nuevo al Aula Virtual!', 'success');
       hasShownWelcome.current = true;
     }
-  }, [addToast]);
+  }, []);
 
+  // === 🔌 PATRÓN FACTORY + ADAPTER (Pagos) ===
   const handleEnroll = async (courseId) => {
     setEnrolling(true);
     try {
-      const processor = PaymentFactory.getProcessor(paymentMethod);
-      const { url } = await processor.checkout({ courseId, userId: user?.id });
-      if (url) {
-        if (url.startsWith('http')) window.location.assign(url);
-        else navigate(url);
+      const request = new PaymentRequest(courseId, user?.id, paymentMethod);
+      const adapter = PaymentFactory.createAdapter(paymentMethod);
+      const result = await adapter.procesar(request);
+
+      if (result.status === 'REDIRECT' && result.redirectUrl?.startsWith('http')) {
+        // 🌉 PATRÓN BRIDGE: Mensajes de hardware o redirección externa marcada como "System"
+        const sysNotif = NotificationFactory.create('system', 'toast');
+        sysNotif.notify(result.message, 'info');
+        window.location.assign(result.redirectUrl);
+      } else if (result.redirectUrl) {
+        // 🌉 PATRÓN BRIDGE: Exito estándar
+        const stdNotif = NotificationFactory.create('standard', 'toast');
+        stdNotif.notify(result.message, 'success');
+        navigate(result.redirectUrl);
+      } else {
+        // 🌉 PATRÓN BRIDGE: Error crítico marcado como "Urgent"
+        const urgentNotif = NotificationFactory.create('urgent', 'toast');
+        urgentNotif.notify(result.message, 'error');
       }
     } catch (error) {
-      alert("Error al iniciar inscripción: " + error.message);
+      const errorNotif = NotificationFactory.create('urgent', 'toast');
+      errorNotif.notify("Error al iniciar inscripción: " + error.message, 'error');
     } finally {
       setEnrolling(false);
     }

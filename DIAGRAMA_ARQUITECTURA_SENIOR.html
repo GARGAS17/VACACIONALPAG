@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arquitectura de Componentes de Software - Clean Architecture</title>
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Mermaid.js -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- SVG Pan Zoom -->
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+    body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; color: #1e293b; }
+  </style>
+</head>
+<body class="antialiased py-8">
+
+  <div class="max-w-7xl mx-auto px-6">
+    <!-- Header -->
+    <header class="bg-white border-slate-200 border rounded-2xl p-6 mb-8 shadow-sm flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="p-3 bg-blue-500 rounded-xl">
+          <i data-lucide="shield-check" class="text-white w-7 h-7"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900 m-0">Reporte de Arquitectura de Software</h1>
+          <p class="text-slate-500 text-sm m-0">Diseño de 3 Capas (Three-Tier) siguiendo principios Clean Architecture y DDD</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-slate-400">
+         <i data-lucide="clock" class="w-4 h-4"></i>
+         <span>Generado: 23/03/2026</span>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="grid grid-cols-1 gap-8">
+      
+      <!-- Notas Técnicas / Contexto -->
+      <section class="bg-blue-50/50 border border-blue-100 rounded-2xl p-6">
+        <h2 class="text-lg font-bold text-blue-900 mb-2 flex items-center gap-2">
+           <i data-lucide="info" class="w-5 h-5 text-blue-600"></i>
+           Directrices del Diseño Arquitectónico
+        </h2>
+        <p class="text-blue-800 text-sm">
+           Este diagrama ilustra la separación estricta de responsabilidades en la plataforma LMS. El Front-End no opera directamente sobre la base de datos; delega el flujo hacia Use Cases y Orquestradores (Patrones de diseño) que finalmente inyectan la persistencia hacia Supabase.
+        </p>
+      </section>
+
+      <!-- Diagrama de Componentes -->
+      <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm overflow-hidden flex items-center justify-center">
+        <div class="mermaid w-full" style="height: 600px;">
+flowchart TD
+    %% === ESTILOS ===
+    classDef layer style fill:#f8fafc,stroke:#cbd5e1,stroke-width:2px,stroke-dasharray: 5 5,color:#334155,font-weight:bold;
+    classDef frontend style fill:#dbeafe,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a;
+    classDef logic style fill:#d1fae5,stroke:#059669,stroke-width:1.5px,color:#064e3b;
+    classDef data style fill:#f3f4f6,stroke:#4b5563,stroke-width:1.5px,color:#111827;
+    classDef note style fill:#fef3c7,stroke:#d97706,stroke-width:1px,color:#78350f,font-size:11px;
+
+    %% === 1. CAPA DE PRESENTACIÓN ===
+    subgraph LayerPresentacion ["🔝 1. CAPA DE PRESENTACIÓN (Frontend)"]
+        direction TB
+        MainView["Dashboard Multi-Rol (Layout)"]
+        subgraph Views ["Módulos / Vistas"]
+            V_Student["Dashboard Estudiante"]
+            V_Professor["Panel de Profesor"]
+            V_Admin["Módulo Pagos y Cursos"]
+        end
+        subgraph AppCore ["Core Framework (React + Vite)"]
+            State["Gestión de Estado (Zustand)"]
+            Router["Enrutador (React Router)"]
+            Hooks["Hooks Personalizados"]
+        end
+        MainView --&gt; State
+        State --&gt; Views
+        Views --&gt; Hooks
+    end
+
+    %% === 2. CAPA DE LÓGICA DE NEGOCIO ===
+    subgraph LayerLogica ["⚙️ 2. CAPA DE LÓGICA DE NEGOCIO (Aplicación)"]
+        direction TB
+        subgraph UseCases ["Casos de Uso / Use Cases"]
+            UC_Enroll["Inscribir Estudiante"]
+            UC_Course["Gestionar Curso"]
+            UC_Audit["Registrar Auditoría"]
+        end
+        subgraph Patterns ["Patrones de Diseño Implementados"]
+            Factory["🏭 Factory Pattern\n(User Profiles)"]
+            Builder["🧱 Builder Pattern\n(Enrollment Flow)"]
+            Prototype["🧬 Prototype Pattern\n(Clone Course)"]
+            AbsFactory["🏗️ Abstract Factory\n(Course Categories)"]
+        end
+        UC_Enroll --&gt; Builder
+        UC_Course --&gt; Prototype
+        UC_Course --&gt; AbsFactory
+    end
+
+    %% === 3. CAPA DE DATOS ===
+    subgraph LayerInfra ["🗄️ 3. CAPA DE INFRAESTRUCTURA (Datos)"]
+        direction TB
+        SupaSDK["Supabase Client SDK"]
+        AuthService["Supabase Auth Service"]
+        subgraph DB [PostgreSQL Database]
+            T_Profiles[("profiles")]
+            T_Courses[("courses")]
+            T_Enroll[("enrollments")]
+            T_Payments[("payments")]
+        end
+        SupaSDK --&gt; AuthService
+        SupaSDK --&gt; DB
+    end
+
+    %% === CONEXIONES ENTRE CAPAS ===
+    Hooks --&gt;|Consume| UseCases
+    Patterns --&gt;|Inyecta persistencia| SupaSDK
+    AuthService -.->|Identidad| Factory
+
+    %% === NOTAS EXPLICATIVAS ===
+    Note1["📝 NOTA 1: Builder Pattern\nValida cupos y estados de pago,\nencadena .withPayment() antes\nde disparar la inserción en DB."]
+    Note2["📝 NOTA 2: Prototype Pattern\nAdminCourses duplica cursos vacacionales\nbypassando IDs primarios de la\ncapa de entidades directamente."]
+    Note3["📝 NOTA 3: Flujo de Matrícula\nVista ➡️ Custom Hook ➡️ Interactor ➡️ Builder ➡️ PostgreSQL"]
+
+    Builder --- Note1
+    Prototype --- Note2
+    UC_Enroll --- Note3
+
+    %% === ASIGNACIÓN DE ESTILOS ===
+    class LayerPresentacion,LayerLogica,LayerInfra layer;
+    class MainView,AppCore,Views,State,Router,Hooks,V_Student,V_Professor,V_Admin frontend;
+    class UseCases,Patterns,UC_Enroll,UC_Course,UC_Audit,Factory,Builder,Prototype,AbsFactory logic;
+    class SupaSDK,AuthService,DB,T_Profiles,T_Courses,T_Enroll,T_Payments data;
+    class Note1,Note2,Note3 note;
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- Script initialization -->
+  <script>
+    mermaid.initialize({
+      theme: 'neutral',
+      themeVariables: {
+        fontFamily: 'Outfit',
+        fontSize: '12px'
+      }
+    });
+
+    // Activar Pan y Zoom cuando el SVG esté renderizado
+    setTimeout(() => {
+        const svgElement = document.querySelector('.mermaid svg');
+        if (svgElement) {
+            svgElement.style.height = '100%';
+            svgElement.style.width = '100%';
+            
+            svgPanZoom(svgElement, {
+                zoomEnabled: true,
+                controlIconsEnabled: true,
+                fit: true,
+                center: true,
+                minZoom: 0.1,
+                maxZoom: 10
+            });
+        }
+    }, 1200);
+
+    lucide.createIcons();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,155 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+    <meta charset="utf-8">
+    <title>Arquitectura del Backend</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11pt; line-height: 1.5; color: #1e293b; }
+        h1 { font-size: 20pt; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5pt; }
+        h2 { font-size: 16pt; color: #334155; margin-top: 20pt; border-bottom: 1px solid #e2e8f0; }
+        h3 { font-size: 13pt; color: #475569; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10pt; margin-bottom: 10pt; }
+        th { background-color: #f1f5f9; text-align: left; font-weight: bold; border: 1px solid #cbd5e1; padding: 6pt; }
+        td { border: 1px solid #cbd5e1; padding: 6pt; font-size: 10.5pt; }
+        blockquote { border-left: 4px solid #3b82f6; background-color: #eff6ff; padding: 10pt; margin: 10pt 0; color: #1e3a8a; }
+        code { font-family: 'Courier New', Courier, monospace; background-color: #f8fafc; color: #b45309; padding: 2pt 4pt; border-radius: 4px; }
+        ul { margin-top: 5pt; margin-bottom: 5pt; }
+    </style>
+</head>
+<body>
+
+<h1>🛠️ Arquitectura del Backend (Back-End)</h1>
+
+<p>El backend de este proyecto está construido sobre <strong>Supabase</strong>, una plataforma <em>Backend-as-a-Service (BaaS)</em> que corre sobre una base de datos <strong>PostgreSQL</strong> empresarial. En lugar de un servidor monolítico tradicional (como Node.js/Express), se utiliza un enfoque de <strong>Arquitectura Serverless y Reactiva</strong>.</p>
+
+<hr>
+
+<h2>🗺️ Visión General de la Arquitectura</h2>
+
+<p>La arquitectura se divide en <strong>4 pilares fundamentales</strong> integrados de extremo a extremo:</p>
+
+<ol>
+    <li><strong>Motor Relacional (Base de Datos)</strong>: PostgreSQL para almacenamiento íntegro.</li>
+    <li><strong>Seguridad de Acceso (Auth + RLS)</strong>: Control de accesos a nivel de fila (*Row Level Security*).</li>
+    <li><strong>Lógica del Servidor (Edge Functions)</strong>: Microservicios para flujos críticos y pasarelas.</li>
+    <li><strong>Capa de Autenticación</strong>: Gestión de sesiones en tiempo real sincronizadas con el Front-End.</li>
+</ol>
+
+<hr>
+
+<h2>🗄️ 1. Motor de Base de Datos (PostgreSQL)</h2>
+
+<p>El sistema opera con tablas estrictamente relacionadas mediante Claves Foráneas (*Foreign Keys*) para garantizar que ningún dato quede huérfano.</p>
+
+<h3>📊 Entidades y Tablas Principales</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Tabla</th>
+            <th>Función Principal</th>
+            <th>Relaciones Clave</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>`profiles`</strong></td>
+            <td>Guarda metadata extendida de los usuarios (Estudiante/Admin).</td>
+            <td>Vinculado a `auth.users` (id).</td>
+        </tr>
+        <tr>
+            <td><strong>`courses`</strong></td>
+            <td>Contiene el catálogo de cursos, precios, cupos y horarios.</td>
+            <td>Relación 1:1 con `professors` y `categories`.</td>
+        </tr>
+        <tr>
+            <td><strong>`enrollments`</strong></td>
+            <td>Historial de matrículas de alumnos y estado de pago (`pending`, `paid`).</td>
+            <td>Vincula `profiles` (estudiante) con `courses`.</td>
+        </tr>
+        <tr>
+            <td><strong>`payments`</strong></td>
+            <td>Auditoría financiera de transacciones (Stripe / Manuales).</td>
+            <td>Apunta a una matrícula (`enrollments`).</td>
+        </tr>
+        <tr>
+            <td><strong>`professors`</strong></td>
+            <td>Portafolio de docentes asignados a cursos.</td>
+            <td>Consumido por la tabla `courses`.</td>
+        </tr>
+    </tbody>
+</table>
+
+<blockquote>💡 <strong>Integridad de Datos</strong>: Se implementaron constraints redundantes. Ej: `capacity > 0` y `price >= 0` para evitar errores matemáticos o inyecciones de precios negativos.</blockquote>
+
+<hr>
+
+<h2>🛡️ 2. Seguridad y Control de Accesos (RLS)</h2>
+
+<p>A diferencia de Express.js donde creas Middlewares, Supabase delega la seguridad a <strong>Directivas de PostgreSQL (RLS)</strong>.</p>
+
+<ul>
+    <li><strong>¿Cómo funciona?</strong>: Cada tabla tiene políticas de acceso basadas en el Rol (`student`, `admin`).</li>
+    <li><strong>Políticas de ejemplo</strong>:
+        <ul>
+            <li><strong>`courses`</strong>: Un alumno solo puede `SELECT` si el curso está publicado. Un Administrador puede `INSERT/WRITE`.</li>
+            <li><strong>`enrollments`</strong>: Un alumno solo puede leer sus propias matrículas (`user_id = auth.uid()`). No puede leer las de otros.</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>🔄 Triggers (Disparadores Automáticos)</h3>
+<p>Para automatizar procesos sin código JS, el backend usa <strong>Funciones PL/pgSQL</strong>:</p>
+<ul>
+    <li><strong>`handle_new_user`</strong>: Al registrarte por primera vez en la app, Supabase Auth dispara un trigger que clona tu ID y Email y los inserta en la tabla `public.profiles` con el rol `student` autoritariamente.</li>
+</ul>
+
+<hr>
+
+<h2>⚡ 3. Lógica Serverless (Edge Functions)</h2>
+
+<p>Cuando el sistema necesita interactuar con librerías privadas de backend (como **Stripe**) o procesar transacciones críticas de negocio, utiliza **Edge Functions** (basadas en Deno/Typescript).</p>
+
+<h3>🚀 Microservicios Disponibles</h3>
+
+<ol>
+    <li><strong>`/functions/enroll`</strong> 📋:<br>
+        <strong>Misión</strong>: Orquestar la inscripción segura a un curso.<br>
+        <strong>Lógica</strong>: Valida que el curso tenga **Cupos disponibles** antes de descontar e insertar en `enrollments`. Si el curso cuesta `$0`, lo aprueba automáticamente en la misma función.
+    </li>
+    <li><strong>`/functions/stripe-webhook`</strong> 💳:<br>
+        <strong>Misión</strong>: Escuchar a Stripe de forma asíncrona.<br>
+        <strong>Lógica</strong>: Cuando un estudiante paga con tarjeta de crédito en la pasarela externa, Stripe avisa a esta función. El backend valida la firma de seguridad del webhook y actualiza el campo `payment_status` de `pending` a `paid` en la base de datos de forma autónoma.
+    </li>
+    <li><strong>`/functions/manage-billing`</strong> ⚙️:<br>
+        <strong>Misión</strong>: Redirigir al panel de facturación interactivo para que los alumnos descarguen recibos o cancelen subscripciones vinculadas.
+    </li>
+</ol>
+
+<hr>
+
+<h2>🤝 4. ¿Cómo habla el Front-End con el Backend?</h2>
+
+<p>El Front-End React (Vite) no ejecuta SQL. Se comunica de dos formas:</p>
+
+<ol>
+    <li><strong>SDK de Supabase</strong>:<br>
+        Consume la API REST automática que genera Postgres.<br>
+        `supabase.from('courses').select('*')` se autoprotege por las reglas RLS antes de devolver la data.
+    </li>
+    <li><strong>Zustand Auth Store</strong>:<br>
+        Escucha el evento `onAuthStateChange` de Supabase.<br>
+        Cuando el usuario inicia sesión, este Store mapea la metadata de `profiles` para saber si debe cargar vistas de Administrador o Alumno de forma reactiva en el dispositivo.
+    </li>
+</ol>
+
+<hr>
+
+<h2>🔧 Checklist de Mantenimiento</h2>
+
+<ul>
+    <li><strong>Edge Functions</strong>: Para desplegarlas o actualizarlas, usa Supabase CLI: `supabase functions deploy [nombre]`.</li>
+    <li><strong>Gestión de Secretos</strong>: Los tokens de Stripe secretos no se guardan en el Front. Se inyectan en Supabase con `supabase secrets set STRIPE_SECRET_KEY=xxx`.</li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagrama de Clases - Patrones de Diseño</title>
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Mermaid.js -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+    body { font-family: 'Outfit', sans-serif; background-color: #0f172a; }
+  </style>
+</head>
+<body class="text-slate-200 antialiased">
+
+  <!-- Header -->
+  <header class="bg-indigo-950/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 py-4 shadow-xl">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-indigo-600 rounded-xl">
+          <i data-lucide="git-merge" class="text-white w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-white m-0">Arquitectura de Software</h1>
+          <p class="text-white text-xs m-0">Diagramas de Clase con Patrones de Diseño aplicados</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-10 space-y-12">
+
+    <!-- Introducción -->
+    <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
+      <h2 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+         <i data-lucide="settings" class="text-indigo-400 w-5 h-5"></i>
+         ¿Por qué no aparecen en Supabase?
+      </h2>
+      <p class="text-white text-sm">
+         El diagrama suministrado por Supabase responde únicamente al **Modelo Relacional de Base de Datos** (Tablas y Llaves Foráneas). Los patrones que implementamos en esta fase viven en la **Capa de Control lógicos del Front-End (Servicios y Vistas)**, desacoplados de la persistencia directa para aumentar la escalabilidad.
+      </p>
+    </div>
+
+    <!-- 1. PATRÓN FACTORY METHOD -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl w-full">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #10B981">
+           <i data-lucide="credit-card" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Creacional</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #10B981">Factory Method (Pagos)</h3>
+        <p class="text-white text-sm mb-4">Centraliza la instanciación de pasarelas de pago (`Stripe`, `Manual`) delegando la orden de confirmación.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ Desacopla APIs de terceros (Stripe).</li>
+           <li>✓ Facilita agregar PayPal o MercadoPago.</li>
+           <li>✓ Se consume en `Catalog.jsx:handleEnroll`.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction LR
+    class PaymentProcessor {
+        &lt;&lt;abstract&gt;&gt;
+        +checkout(data) Promise
+    }
+    class StripeProcessor {
+        +checkout(data) Promise
+    }
+    class ManualProcessor {
+        +checkout(data) Promise
+    }
+    class PaymentFactory {
+        +getProcessor(method) PaymentProcessor
+    }
+    PaymentProcessor &lt;|-- StripeProcessor : Implementa
+    PaymentProcessor &lt;|-- ManualProcessor : Implementa
+    PaymentFactory ..&gt; PaymentProcessor : Retorna
+         </div>
+      </div>
+    </section>
+
+    <!-- 2. PATRÓN ABSTRACT FACTORY -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #8B5CF6">
+           <i data-lucide="layout" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Creacional</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #8B5CF6">Abstract Factory (UI sidebars)</h3>
+        <p class="text-white text-sm mb-4">Crea familias de componentes (enlaces, botones y estilos) diferenciados para `Alumnos` y `Admins` integrando una interfaz genérica.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ Separa visualizaciones por Rol de usuario.</li>
+           <li>✓ Respeta el Principio de Responsabilidad Única.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction TD
+    class UIFactory {
+        &lt;&lt;abstract&gt;&gt;
+        +getSidebarItems() Array
+        +getShellStyles() String
+    }
+    class StudentUIFactory {
+        +profile: Object
+        +getSidebarItems() Array
+    }
+    class AdminUIFactory {
+        +getSidebarItems() Array
+    }
+    class UIFactoryProvider {
+        +getFactory(role, profile) UIFactory
+    }
+    UIFactory &lt;|-- StudentUIFactory : Concretiza
+    UIFactory &lt;|-- AdminUIFactory : Concretiza
+    UIFactoryProvider ..&gt; UIFactory : Despacha
+         </div>
+      </div>
+    </section>
+
+    <!-- 3. PATRÓN BUILDER -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #A78BFA">
+           <i data-lucide="filter" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Creacional</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #A78BFA">Builder (Query Builder)</h3>
+        <p class="text-white text-sm mb-4">Construye la matriz de filtros para cursos encadenando métodos para evitar largos arrays de condicionales apilados (`if`).</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ Encadenable: `.withSearch().build()`</li>
+           <li>✓ Código altamente legible y fácil de mantener.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    class CourseQueryBuilder {
+        +courses: Array
+        +excludePaid(paidIds) CourseQueryBuilder
+        +withSearch(query) CourseQueryBuilder
+        +withSchedule(type) CourseQueryBuilder
+        +onlyAvailable(flag) CourseQueryBuilder
+        +build() Array
+    }
+         </div>
+      </div>
+    </section>
+
+    <!-- 4. PATRÓN PROTOTYPE -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #3B82F6">
+           <i data-lucide="copy" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Creacional</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #3B82F6">Prototype (Clonación)</h3>
+        <p class="text-white text-sm mb-4">Clona un registro previo de curso en el panel Administrativo vaciando IDs primarios para forzar inserciones nuevas sin repeticiones manuales de tipado.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ Instanciación rápida.</li>
+           <li>✓ Se consume en `AdminCourses.jsx:handleCloneCourse`.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    class CourseObject {
+        +title: String
+        +price: Number
+        +professor_id: UUID
+    }
+    class AdminView {
+        +handleCloneCourse() void
+    }
+    AdminView ..&gt; CourseObject : "Clonar Curso"
+         </div>
+      </div>
+    </section>
+
+    <!-- 5. DIAGRAMA MAESTRO (ARQUITECTURA COMPLETA) -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 overflow-auto shadow-inner">
+      <div class="flex items-center gap-1.5 mb-4 text-pink-400">
+         <i data-lucide="git-fork" class="w-5 h-5"></i>
+         <span class="text-xs font-bold uppercase tracking-wider">Arquitectura Unificada</span>
+      </div>
+      <h3 class="text-xl font-bold text-white mb-2 m-0">Diagrama Maestro: Capa de Datos + Capa de Lógica</h3>
+      <p class="text-white text-sm mb-6">Mapeo unificado de las tablas de Supabase (Cajas Grises) consumidas y administradas por los Patrones de Diseño implementados (Cajas Azules/Púrpuras).</p>
+      
+      <div class="mermaid w-full flex items-center justify-center">
+classDiagram
+    direction TD
+
+    %% === CAPA DE DATOS (TABLAS DE SUPABASE) ===
+    class Course {
+        +UUID id
+        +String title
+        +String description
+        +UUID category_id
+        +UUID professor_id
+        +Number price
+        +Number capacity
+        +Number enrolled_count
+        +Date start_date
+        +Date end_date
+        +Time start_time
+        +Time end_time
+        +String days_of_week
+        +String status
+        +Boolean is_published
+        +Boolean is_deleted
+        +String requirements
+    }
+    class Profile {
+        +UUID id
+        +String email
+        +String full_name
+        +String role
+        +String avatar_url
+        +Boolean is_active
+        +Boolean is_deleted
+        +Date created_at
+    }
+    class Enrollment {
+        +UUID id
+        +UUID user_id
+        +UUID course_id
+        +String payment_status
+        +String completion_status
+        +Number paid_amount
+        +Date enrolled_at
+    }
+    class Payment {
+        +UUID id
+        +UUID enrollment_id
+        +UUID user_id
+        +String stripe_payment_id
+        +Number amount
+        +String currency
+        +String status
+    }
+    class Professor {
+        +UUID id
+        +String name
+        +String email
+        +String photo_url
+        +Boolean is_active
+    }
+    class Category {
+        +UUID id
+        +String name
+        +String icon
+        +String color
+    }
+    class Review {
+        +UUID id
+        +UUID course_id
+        +UUID user_id
+        +Number rating
+        +String comment
+    }
+    class AuditLog {
+        +UUID id
+        +UUID user_id
+        +String table_name
+        +String operation
+        +JSONB new_values
+    }
+
+    %% === CAPA DE LÓGICA (VISTAS Y PATRONES) ===
+    class Catalog_View {
+        +courses : Array
+        +selectedCourse : Object
+        +enrolling : Boolean
+        +handleEnroll() void
+    }
+    class AdminCourses_View {
+        +selectedCourse : Object
+        +handleCloneCourse() void
+        +handleSave() void
+    }
+    class CourseQueryBuilder {
+        +courses : Array
+        +excludePaid() CourseQueryBuilder
+        +withSearch() CourseQueryBuilder
+        +build() Array
+    }
+    class PaymentProcessor {
+        &lt;&lt;abstract&gt;&gt;
+        +checkout() Promise
+    }
+    class StripeProcessor {
+        +checkout() Promise
+    }
+    class ManualProcessor {
+        +checkout() Promise
+    }
+    class PaymentFactory {
+        +getProcessor() PaymentProcessor
+    }
+    class UIFactory {
+        &lt;&lt;abstract&gt;&gt;
+        +getSidebarItems() Array
+    }
+    class StudentUIFactory {
+        +getSidebarItems() Array
+    }
+    class AdminUIFactory {
+        +getSidebarItems() Array
+    }
+    class UIFactoryProvider {
+        +getFactory() UIFactory
+    }
+
+    %% === RELACIONES ---
+    Course "1" *-- "M" Enrollment : Tiene
+    Profile "1" *-- "M" Enrollment : Se Matricula
+    Enrollment "1" *-- "1" Payment : Genera
+    Course "1" *-- "1" Category : Pertenece
+    Course "1" *-- "1" Professor : Dicta
+    Course "1" *-- "M" Review : Recibe
+    Profile "1" *-- "M" Review : Escribe
+    Profile "1" *-- "M" AuditLog : Deja
+
+    Catalog_View ..&gt; CourseQueryBuilder : Usa para buscador
+    Catalog_View ..&gt; PaymentFactory : Consume
+    AdminCourses_View ..&gt; Course : Administra y Prototipa
+    CourseQueryBuilder ..&gt; Course : Filtra Array de
+    PaymentFactory ..&gt; PaymentProcessor : Despacha
+    PaymentProcessor &lt;|-- StripeProcessor
+    PaymentProcessor &lt;|-- ManualProcessor
+    ManualProcessor ..&gt; Enrollment : Inserta Fila en
+    UIFactoryProvider ..&gt; UIFactory : Despacha
+    UIFactory &lt;|-- StudentUIFactory
+    UIFactory &lt;|-- AdminUIFactory
+    UIFactory ..&gt; Profile : Evalúa para dibujar UI
+
+    %% === ESTILOS ESTRICTOS ===
+    style Course fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Profile fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Enrollment fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Payment fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Professor fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Category fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Review fill:#1e293b,stroke:#475569,stroke-width:1px
+    style AuditLog fill:#1e293b,stroke:#475569,stroke-width:1px
+
+    style Catalog_View fill:#1e3a8a,stroke:#3b82f6,stroke-width:1px
+    style AdminCourses_View fill:#1e3a8a,stroke:#3b82f6,stroke-width:1px
+    style CourseQueryBuilder fill:#4c1d95,stroke:#8b5cf6,stroke-width:1px
+    style PaymentProcessor fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style StripeProcessor fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style ManualProcessor fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style PaymentFactory fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style UIFactoryProvider fill:#581c87,stroke:#a855f7,stroke-width:1px
+    style UIFactory fill:#581c87,stroke:#a855f7,stroke-width:1px
+    style StudentUIFactory fill:#581c87,stroke:#a855f7,stroke-width:1px
+    style AdminUIFactory fill:#581c87,stroke:#a855f7,s059669,stroke-width:1px
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Script initialization -->
+  <script>
+    mermaid.initialize({
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#3730a3',
+        primaryTextColor: '#f8fafc',
+        primaryBorderColor: '#6366f1',
+        lineColor: '#818cf8',
+        secondaryColor: '#1e1b4b',
+        tertiaryColor: '#312e81'
+      }
+    });
+    lucide.createIcons();
+  </script>
+
+</body>
+</html>
