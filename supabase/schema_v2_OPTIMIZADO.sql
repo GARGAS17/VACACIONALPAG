@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 
 CREATE TABLE IF NOT EXISTS public.categories (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  parent_id uuid REFERENCES public.categories(id) ON DELETE CASCADE,
   name text NOT NULL UNIQUE,
   description text DEFAULT ''::text,
   icon text DEFAULT 'BookOpen'::text,

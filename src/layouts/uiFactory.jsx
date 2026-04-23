@@ -2,9 +2,11 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, BookOpen, User, CreditCard, GraduationCap, Settings, 
-  HelpCircle, LogOut, LayoutDashboard, Users, ClipboardList 
+  HelpCircle, LogOut, LayoutDashboard, Users, ClipboardList,
+  Shield, Key
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
+import { MenuItem, MenuGroup } from '../patterns/MenuComposite';
 
 // === 1. INTERFAZ ABSTRACTA (Abstract Factory) ===
 class UIFactory {
@@ -21,22 +23,32 @@ class StudentUIFactory extends UIFactory {
   }
 
   getSidebarItems() {
-    const items = [
-      { to: '/dashboard/inicio', label: 'Inicio', icon: Home },
-      { to: '/dashboard/cursos', label: 'Cursos', icon: BookOpen },
-      { to: '/dashboard/perfil', label: 'Mi Perfil', icon: User },
-      { to: '/dashboard/pagos', label: 'Pagos', icon: CreditCard },
-      { to: '/dashboard/mis_cursos', label: 'Mis Cursos', icon: GraduationCap },
-      { to: '/dashboard/ajustes', label: 'Ajustes', icon: Settings },
-      { to: '/dashboard/ayuda', label: 'Ayuda', icon: HelpCircle },
-    ];
+    // 🌳 APLICANDO COMPOSITE: En lugar de un simple array, construimos un árbol
+    
+    const rootMenu = new MenuGroup('Menú Principal', null);
 
-    // Si es administrador navegando como estudiante, agregamos acceso rápido
+    // Hojas simples (Leaf)
+    rootMenu.add(new MenuItem('Inicio', Home, '/dashboard/inicio'));
+    rootMenu.add(new MenuItem('Catálogo', BookOpen, '/dashboard/cursos'));
+    rootMenu.add(new MenuItem('Mis Cursos', GraduationCap, '/dashboard/mis_cursos'));
+    rootMenu.add(new MenuItem('Pagos', CreditCard, '/dashboard/pagos'));
+
+    // Grupo de Configuración (Composite anidado)
+    const settingsGroup = new MenuGroup('Configuración', Settings);
+    settingsGroup.add(new MenuItem('Mi Perfil', User, '/dashboard/perfil'));
+    settingsGroup.add(new MenuItem('Ayuda', HelpCircle, '/dashboard/ayuda'));
+    
+    rootMenu.add(settingsGroup);
+
+    // Si es administrador, le agregamos un grupo especial con acceso admin
     if (this.profile?.role === 'admin') {
-      items.push({ to: '/admin', label: 'Vista Admin 👑', icon: LayoutDashboard });
+      const adminGroup = new MenuGroup('Opciones Root', Shield);
+      adminGroup.add(new MenuItem('Vista Admin 👑', LayoutDashboard, '/admin'));
+      rootMenu.add(adminGroup);
     }
 
-    return items;
+    // Al pedir getFlatItems() al root, aplanamos el árbol para no romper el CSS del Menú animado
+    return rootMenu.getFlatItems(); 
   }
 
   getShellStyles() {
@@ -51,12 +63,15 @@ class StudentUIFactory extends UIFactory {
 // === 3. FACTORÍA CONCRETA: ADMINISTRADOR ===
 class AdminUIFactory extends UIFactory {
   getSidebarItems() {
-    return [
-      { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-      { to: '/admin/professors', label: 'Profesores', icon: Users },
-      { to: '/admin/courses', label: 'Cursos', icon: BookOpen },
-      { to: '/admin/enrollments', label: 'Inscripciones', icon: ClipboardList },
-    ];
+    // 🌳 APLICANDO COMPOSITE (Estructura plana para Admin Panel según diseño)
+    const rootMenu = new MenuGroup('Admin Menu', null);
+
+    rootMenu.add(new MenuItem('Dashboard', LayoutDashboard, '/admin'));
+    rootMenu.add(new MenuItem('Profesores', Users, '/admin/professors'));
+    rootMenu.add(new MenuItem('Cursos', BookOpen, '/admin/courses'));
+    rootMenu.add(new MenuItem('Inscripciones', ClipboardList, '/admin/enrollments'));
+
+    return rootMenu.renderData().children;
   }
 
   getShellStyles() {
