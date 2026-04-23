@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../api/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
+import { UIFactoryProvider } from '../../layouts/uiFactory';
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -48,29 +49,49 @@ export const AdminLayout = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group no-underline ${
-                  isActive
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`
+        <nav className="flex-1 p-4 overflow-y-auto">
+          {UIFactoryProvider.getFactory('admin').getSidebarItems().map((item, index) => {
+            const renderNode = (node, idx) => {
+              const Icon = node.icon;
+              
+              if (node.isGroup) {
+                return (
+                  <div key={`group-${idx}`} className="mb-4">
+                    <div className="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                      {Icon && <Icon size={14} />} {node.label}
+                    </div>
+                    <div className="space-y-1">
+                      {node.children.map((child, i) => renderNode(child, i))}
+                    </div>
+                  </div>
+                );
+              } else {
+                return (
+                  <NavLink
+                    key={node.to || idx}
+                    to={node.to}
+                    end={node.to === '/admin'}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group no-underline ${
+                        isActive
+                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/30'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {Icon && <Icon size={18} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-white'} />}
+                        <span className="flex-1">{node.label}</span>
+                        {isActive && <ChevronRight size={14} className="text-indigo-300" />}
+                      </>
+                    )}
+                  </NavLink>
+                );
               }
-            >
-              {({ isActive }) => (
-                <>
-                  <Icon size={18} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-white'} />
-                  <span className="flex-1">{label}</span>
-                  {isActive && <ChevronRight size={14} className="text-indigo-300" />}
-                </>
-              )}
-            </NavLink>
-          ))}
+            };
+            return renderNode(item, index);
+          })}
         </nav>
 
         {/* Footer: Back to app + Sign Out */}

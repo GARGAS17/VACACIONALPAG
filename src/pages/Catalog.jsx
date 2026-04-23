@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@supabase/supabase-js';
 import { 
   Home, BookOpen, User, CreditCard, GraduationCap, Settings, 
@@ -10,6 +11,7 @@ import { useNotificationStore } from '../services/useNotificationStore';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PaymentFactory, PaymentRequest } from '../services/paymentAdapter';
 import { NotificationFactory } from '../services/notificationBridge';
+import { PriceCalculatorFactory } from '../patterns/PriceDecorator';
 import { UIFactoryProvider } from '../layouts/uiFactory';
 import { CourseQueryBuilder } from '../services/courseQueryBuilder';
 
@@ -106,7 +108,9 @@ export default function Catalog() {
   const handleSignOut = async () => {
     await signOut();
     sessionStorage.clear(); // Limpia role_selected y role_mode de un golpe
-    addToast({ type: 'info', message: 'Sesión cerrada correctamente' });
+    // 🌉 PATRÓN BRIDGE: Cierre de sesión
+    const signoutNotif = NotificationFactory.create('standard', 'toast');
+    signoutNotif.notify('Sesión cerrada correctamente', 'info');
     navigate('/auth');
   };
 
@@ -125,19 +129,19 @@ export default function Catalog() {
     return (
       <div className="navigation">
         <ul>
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const Icon = item.icon;
             const linkName = item.to.split('/').pop();
             const isActive = currentTab === linkName;
 
             return (
               <li 
-                key={item.to} 
+                key={item.to || index} 
                 className={isActive ? 'active' : ''} 
                 onClick={() => navigate(item.to)}
               >
                 <a href="#">
-                  <span className="icon"><Icon size={24} /></span>
+                  <span className="icon">{Icon && <Icon size={24} />}</span>
                   <span className="title">{item.label}</span>
                 </a>
               </li>
@@ -145,7 +149,7 @@ export default function Catalog() {
           })}
           
           <li style={{ marginTop: 'auto', marginBottom: '20px' }}>
-            <button onClick={handleSignOut}>
+            <button onClick={handleSignOut} style={{ width: '100%' }}>
               <span className="icon"><LogOut size={24} /></span>
               <span className="title font-bold">Cerrar Sesión</span>
             </button>
@@ -226,7 +230,21 @@ export default function Catalog() {
                     <div className="detail-item"><Users size={14} /> {course.enrolled_count}/{course.capacity} inscritos</div>
                   </div>
                   <div className="course-footer">
-                    <div className="course-price">$ US$ {course.price}</div>
+                    {/* 🎁 PATRÓN DECORATOR: Cálculo dinámico de precio */}
+                    {(() => {
+                      const finalPriceObj = PriceCalculatorFactory.calculateFinalPrice(course.price, profile, false);
+                      const finalPrice = finalPriceObj.getPrice();
+                      return (
+                        <div className="course-price">
+                           {course.price > 0 && finalPrice < course.price && (
+                             <span style={{ textDecoration: 'line-through', fontSize: '0.8rem', color: '#94a3b8', marginRight: '8px' }}>
+                               ${course.price.toFixed(2)}
+                             </span>
+                           )}
+                           $ US$ {finalPrice.toFixed(2)}
+                        </div>
+                      );
+                    })()}
                     <span className="btn-details">
                       Ver detalle <ChevronRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginTop: '-2px' }}/>
                     </span>
@@ -256,7 +274,28 @@ export default function Catalog() {
                   <div className="detail-item"><Calendar size={16} /> Duración total del periodo vacacional</div>
                   <div className="detail-item"><Users size={16} /> {selectedCourse.enrolled_count} inscritos de {selectedCourse.capacity} cupos totales</div>
                 </div>
-                <div className="course-price" style={{ fontSize: '1.25rem' }}>$ US$ {selectedCourse.price}</div>
+                
+                {/* 🎁 PATRÓN DECORATOR: Desglose de Precios */}
+                {(() => {
+                  const finalPriceObj = PriceCalculatorFactory.calculateFinalPrice(selectedCourse.price, profile, false);
+                  const breakdown = finalPriceObj.getBreakdown();
+                  
+                  return (
+                    <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#64748b', marginBottom: '8px', fontWeight: 'bold' }}>Resumen de Pago</h4>
+                      {breakdown.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '4px', color: item.amount < 0 ? '#10b981' : '#334155' }}>
+                          <span>{item.reason}</span>
+                          <span>{item.amount < 0 ? '-' : ''}$ {Math.abs(item.amount).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '1.2rem', color: '#0f172a' }}>
+                        <span>Total a Pagar</span>
+                        <span>$ US$ {finalPriceObj.getPrice().toFixed(2)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               <div className="mb-4">
                 <p className="text-slate-700 font-bold mb-2 text-xs">Selecciona método de pago:</p>
