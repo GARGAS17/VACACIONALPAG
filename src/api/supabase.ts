@@ -8,3 +8,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+
+// Exponer a global para demostraciones en la consola del navegador
+if (typeof window !== 'undefined') {
+  // @ts-ignore
+  window.supabase = supabase;
+}
