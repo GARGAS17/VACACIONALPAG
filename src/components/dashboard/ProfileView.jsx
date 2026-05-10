@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, BookOpen, Clock, Phone, Globe, MapPin, AlignLeft } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../api/supabase';
-import { useNotificationStore } from '../../services/useNotificationStore';
+import { useNotificationStore } from '../../store/useNotificationStore';
 
 export default function ProfileView() {
   const { profile, user, fetchProfile } = useAuthStore();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../api/supabase';
 import { Plus, Search, Pencil, Trash2, AlertTriangle, Users, DollarSign, Image, Upload, Copy } from 'lucide-react';
-import { useNotificationStore } from '../../services/useNotificationStore';
+import { useNotificationStore } from '../../store/useNotificationStore';
 
 const statusColors = {
   published: 'bg-green-500/15 text-green-400',

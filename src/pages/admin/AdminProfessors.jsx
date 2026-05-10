@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../api/supabase';
 import { Plus, Search, Pencil, Trash2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
-import { useNotificationStore } from '../../services/useNotificationStore';
+import { useNotificationStore } from '../../store/useNotificationStore';
 
 export const AdminProfessors = () => {
   const addToast = useNotificationStore((state) => state.addToast);

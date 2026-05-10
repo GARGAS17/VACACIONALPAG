@@ -1,4 +1,4 @@
-import { useNotificationStore } from './useNotificationStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 // ====================================================================
 // 🌉 PATRÓN BRIDGE + FACTORY - Sistema de Notificaciones

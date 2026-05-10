@@ -7,13 +7,14 @@ import {
   Calendar, Clock, CheckCircle2, ChevronRight, X
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
-import { useNotificationStore } from '../services/useNotificationStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { PaymentFactory, PaymentRequest } from '../services/paymentAdapter';
 import { NotificationFactory } from '../services/notificationBridge';
+import { AuditEnrollmentProxy } from '../services/proxies';
 import { PriceCalculatorFactory } from '../patterns/PriceDecorator';
-import { UIFactoryProvider } from '../layouts/uiFactory';
+import { UIFactoryProvider } from '../patterns/uiFactory';
 import { CourseQueryBuilder } from '../services/courseQueryBuilder';
+import { EntityFlyweightFactory } from '../patterns/flyweight/EntityFlyweightFactory';
 
 import ProfileView from '../components/dashboard/ProfileView';
 import PaymentsView from '../components/dashboard/PaymentsView';
@@ -44,9 +45,18 @@ export default function Catalog() {
   const { data: courses = [], isLoading: loadingCourses } = useQuery({
     queryKey: ['courses'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('courses').select('*, categories(name), professors(name)');
+      // 1. Añadimos el 'id' a la proyección para usarlo como key segura
+      const { data, error } = await supabase.from('courses').select('*, categories(id, name), professors(id, name)');
       if (error) throw error;
-      return data || [];
+      
+      // 2. 🍃 PATRÓN FLYWEIGHT: Normalizamos y compartimos memoria
+      const optimizedCourses = (data || []).map(course => ({
+        ...course,
+        professors: EntityFlyweightFactory.getProfessor(course.professors),
+        categories: EntityFlyweightFactory.getCategory(course.categories)
+      }));
+      
+      return optimizedCourses;
     }
   });
 
@@ -74,35 +84,22 @@ export default function Catalog() {
     }
   }, []);
 
-  // === 🔌 PATRÓN FACTORY + ADAPTER (Pagos) ===
+  // === 🕵️ PATRÓN PROXY + FACADE (Auditoría + Inscripciones) ===
   const handleEnroll = async (courseId) => {
     setEnrolling(true);
-    try {
-      const request = new PaymentRequest(courseId, user?.id, paymentMethod);
-      const adapter = PaymentFactory.createAdapter(paymentMethod);
-      const result = await adapter.procesar(request);
-
-      if (result.status === 'REDIRECT' && result.redirectUrl?.startsWith('http')) {
-        // 🌉 PATRÓN BRIDGE: Mensajes de hardware o redirección externa marcada como "System"
-        const sysNotif = NotificationFactory.create('system', 'toast');
-        sysNotif.notify(result.message, 'info');
-        window.location.assign(result.redirectUrl);
-      } else if (result.redirectUrl) {
-        // 🌉 PATRÓN BRIDGE: Exito estándar
-        const stdNotif = NotificationFactory.create('standard', 'toast');
-        stdNotif.notify(result.message, 'success');
-        navigate(result.redirectUrl);
+    
+    // El Proxy envuelve a la Fachada. Loguea silenciosamente la transacción.
+    const result = await AuditEnrollmentProxy.processEnrollment(courseId, user?.id, paymentMethod);
+    
+    if (result.success && result.url) {
+      if (result.isExternal) {
+        window.location.assign(result.url);
       } else {
-        // 🌉 PATRÓN BRIDGE: Error crítico marcado como "Urgent"
-        const urgentNotif = NotificationFactory.create('urgent', 'toast');
-        urgentNotif.notify(result.message, 'error');
+        navigate(result.url);
       }
-    } catch (error) {
-      const errorNotif = NotificationFactory.create('urgent', 'toast');
-      errorNotif.notify("Error al iniciar inscripción: " + error.message, 'error');
-    } finally {
-      setEnrolling(false);
     }
+    
+    setEnrolling(false);
   };
 
   const handleSignOut = async () => {

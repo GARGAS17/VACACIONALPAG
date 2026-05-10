@@ -3,7 +3,7 @@ import { Facebook, Globe, Github, Linkedin } from 'lucide-react';
 import './Auth.css';
 import { supabase } from '../api/supabase';
 import { useNavigate } from 'react-router-dom';
-import { useNotificationStore } from '../services/useNotificationStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 export default function Auth() {
   const [isRightPanelActive, setIsRightPanelActive] = useState(false);

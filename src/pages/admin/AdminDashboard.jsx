@@ -1,44 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../api/supabase';
 import { DollarSign, TrendingUp, Users, BookOpen, BarChart3, Award, Download } from 'lucide-react';
-
-const fetchAdminMetrics = async () => {
-  const [coursesRes, enrollmentsRes] = await Promise.all([
-    supabase.from('courses').select('id, title, enrolled_count, capacity, price, status'),
-    supabase.from('enrollments').select('id, payment_status, courses(price)'),
-  ]);
-
-  if (coursesRes.error) throw coursesRes.error;
-  if (enrollmentsRes.error) throw enrollmentsRes.error;
-
-  const courses = coursesRes.data || [];
-  const enrollments = enrollmentsRes.data || [];
-
-  const paidEnrollments = enrollments.filter((e) => e.payment_status === 'completed');
-  const totalRevenue = paidEnrollments.reduce((sum, e) => {
-    const c = e.courses;
-    const price = Array.isArray(c) ? (c[0]?.price ?? 0) : (c?.price ?? 0);
-    return sum + price;
-  }, 0);
-
-  const topCourse = courses.reduce(
-    (best, c) => (!best || c.enrolled_count > best.enrolled_count ? c : best),
-    null
-  );
-
-  const totalCapacity = courses.reduce((s, c) => s + c.capacity, 0);
-  const totalEnrolled = courses.reduce((s, c) => s + c.enrolled_count, 0);
-  const occupancyPercent = totalCapacity > 0 ? Math.round((totalEnrolled / totalCapacity) * 100) : 0;
-
-  return {
-    totalRevenue,
-    topCourse: topCourse ? { title: topCourse.title, enrolled_count: topCourse.enrolled_count } : null,
-    occupancyPercent,
-    totalEnrollments: enrollments.length,
-    totalCourses: courses.length,
-    publishedCourses: courses.filter((c) => c.status === 'published').length,
-  };
-};
+import { DashboardMetricsReport, CSVFormatter, JSONFormatter } from '../../services/reportBridge';
+import { metricsService } from '../../services/proxies';
 
 const StatCard = ({ label, value, sub, icon: Icon, color }) => (
   <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm">
@@ -57,9 +21,19 @@ export const AdminDashboard = () => {
   const [metrics, setMetrics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [exportFormat, setExportFormat] = useState('csv');
+
+  const handleExport = () => {
+    if (!metrics) return;
+    // 🌉 APLICANDO EL PATRÓN BRIDGE
+    const formatter = exportFormat === 'csv' ? new CSVFormatter() : new JSONFormatter();
+    const report = new DashboardMetricsReport(formatter);
+    report.export('reporte-admin-dashboard', metrics);
+  };
 
   useEffect(() => {
-    fetchAdminMetrics()
+    // 🕵️ APLICANDO EL PATRÓN PROXY (Caché)
+    metricsService.getDashboardMetrics()
       .then(setMetrics)
       .catch((err) => setError(err.message))
       .finally(() => setIsLoading(false));
@@ -96,19 +70,23 @@ export const AdminDashboard = () => {
           <h1 className="text-2xl font-bold text-white mb-1 m-0">Dashboard de Administración</h1>
           <p className="text-slate-400 text-sm m-0">Resumen general de la plataforma en tiempo real</p>
         </div>
-        <button
-          onClick={() => {
-            const csv = `Métrica,Valor\nIngresos Totales,$${metrics?.totalRevenue?.toFixed(2) ?? 0}\nInscripciones,${metrics?.totalEnrollments ?? 0}\nCursos,${metrics?.totalCourses ?? 0}\nOcupación,${metrics?.occupancyPercent ?? 0}%`;
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'reporte-admin.csv'; a.click();
-          }}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors w-max cursor-pointer border-none"
-        >
-          <Download size={15} />
-          Exportar Reporte
-        </button>
+        <div className="flex items-center gap-3">
+          <select 
+            value={exportFormat} 
+            onChange={(e) => setExportFormat(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-slate-300 text-sm rounded-xl px-3 py-2 outline-none focus:border-indigo-500 cursor-pointer"
+          >
+            <option value="csv">Formato CSV</option>
+            <option value="json">Formato JSON</option>
+          </select>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors w-max cursor-pointer border-none"
+          >
+            <Download size={15} />
+            Exportar Reporte
+          </button>
+        </div>
       </div>
 
       {/* Stats grid */}

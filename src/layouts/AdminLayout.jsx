@@ -9,9 +9,9 @@ import {
   GraduationCap,
   ChevronRight,
 } from 'lucide-react';
-import { supabase } from '../../api/supabase';
-import { useAuthStore } from '../../store/useAuthStore';
-import { UIFactoryProvider } from '../../layouts/uiFactory';
+import { supabase } from '../api/supabase';
+import { useAuthStore } from '../store/useAuthStore';
+import { UIFactoryProvider } from '../patterns/uiFactory';
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },

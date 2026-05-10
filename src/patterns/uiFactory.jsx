@@ -6,7 +6,7 @@ import {
   Shield, Key
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
-import { MenuItem, MenuGroup } from '../patterns/MenuComposite';
+import { MenuItem, MenuGroup } from './MenuComposite';
 
 // === 1. INTERFAZ ABSTRACTA (Abstract Factory) ===
 class UIFactory {
