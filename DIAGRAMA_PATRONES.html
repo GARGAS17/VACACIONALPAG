@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Diagrama de Clases - Patrones de Diseño</title>
-  <!-- Tailwind CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
   <!-- Mermaid.js -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <!-- Lucide Icons -->
@@ -13,6 +12,38 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     body { font-family: 'Outfit', sans-serif; background-color: #0f172a; }
+    
+    /* Fullscreen Master Diagram Styles */
+    #master-diagram-section:fullscreen {
+      background-color: #0f172a !important;
+      padding: 0;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #master-diagram-section:fullscreen > div:not(.mermaid),
+    #master-diagram-section:fullscreen > h3,
+    #master-diagram-section:fullscreen > p {
+      display: none !important;
+    }
+    #master-diagram-section:fullscreen .mermaid {
+      width: 100vw !important;
+      height: 100vh !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+    #master-diagram-section:fullscreen .mermaid svg {
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+    /* Ocultar opciones de acercamiento */
+    #master-diagram-section:fullscreen svg [id*="svg-pan-zoom-controls"] {
+      display: none !important;
+    }
   </style>
 </head>
 <body class="text-slate-200 antialiased">
@@ -44,6 +75,115 @@
          El diagrama suministrado por Supabase responde únicamente al **Modelo Relacional de Base de Datos** (Tablas y Llaves Foráneas). Los patrones que implementamos en esta fase viven en la **Capa de Control lógicos del Front-End (Servicios y Vistas)**, desacoplados de la persistencia directa para aumentar la escalabilidad.
       </p>
     </div>
+
+
+    <!-- 0. DIAGRAMA BASE DE DATOS -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 overflow-auto shadow-inner mb-12">
+      <div class="flex items-center gap-1.5 mb-4 text-emerald-400">
+         <i data-lucide="database" class="w-5 h-5"></i>
+         <span class="text-xs font-bold uppercase tracking-wider">Esquema Relacional</span>
+      </div>
+      <h3 class="text-xl font-bold text-white mb-2 m-0">Diagrama de Base de Datos (Supabase)</h3>
+      <p class="text-white text-sm mb-6">Modelo de dominio original sin abstracciones de patrones de diseño. Representa las tablas físicas y sus relaciones.</p>
+      
+      <div class="mermaid w-full flex items-center justify-center">
+classDiagram
+    direction TD
+
+    class Course {
+        +UUID id
+        +String title
+        +String description
+        +UUID category_id
+        +UUID professor_id
+        +Number price
+        +Number capacity
+        +Number enrolled_count
+        +Date start_date
+        +Date end_date
+        +Time start_time
+        +Time end_time
+        +String days_of_week
+        +String status
+        +Boolean is_published
+        +Boolean is_deleted
+        +String requirements
+    }
+    class Profile {
+        +UUID id
+        +String email
+        +String full_name
+        +String role
+        +String avatar_url
+        +Boolean is_active
+        +Boolean is_deleted
+        +Date created_at
+    }
+    class Enrollment {
+        +UUID id
+        +UUID user_id
+        +UUID course_id
+        +String payment_status
+        +String completion_status
+        +Number paid_amount
+        +Date enrolled_at
+    }
+    class Payment {
+        +UUID id
+        +UUID enrollment_id
+        +UUID user_id
+        +String stripe_payment_id
+        +Number amount
+        +String currency
+        +String status
+    }
+    class Professor {
+        +UUID id
+        +String name
+        +String email
+        +String photo_url
+        +Boolean is_active
+    }
+    class Category {
+        +UUID id
+        +String name
+        +String icon
+        +String color
+    }
+    class Review {
+        +UUID id
+        +UUID course_id
+        +UUID user_id
+        +Number rating
+        +String comment
+    }
+    class AuditLog {
+        +UUID id
+        +UUID user_id
+        +String table_name
+        +String operation
+        +JSONB new_values
+    }
+
+    Course "1" *-- "M" Enrollment : Tiene
+    Profile "1" *-- "M" Enrollment : Se Matricula
+    Enrollment "1" *-- "1" Payment : Genera
+    Course "1" *-- "1" Category : Pertenece
+    Course "1" *-- "1" Professor : Dicta
+    Course "1" *-- "M" Review : Recibe
+    Profile "1" *-- "M" Review : Escribe
+    Profile "1" *-- "M" AuditLog : Deja
+
+    style Course fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Profile fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Enrollment fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Payment fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Professor fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Category fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Review fill:#1e293b,stroke:#475569,stroke-width:1px
+    style AuditLog fill:#1e293b,stroke:#475569,stroke-width:1px
+      </div>
+    </section>
 
     <!-- 1. PATRÓN FACTORY METHOD -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -183,11 +323,334 @@ classDiagram
       </div>
     </section>
 
-    <!-- 5. DIAGRAMA MAESTRO (ARQUITECTURA COMPLETA) -->
-    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 overflow-auto shadow-inner">
-      <div class="flex items-center gap-1.5 mb-4 text-pink-400">
-         <i data-lucide="git-fork" class="w-5 h-5"></i>
-         <span class="text-xs font-bold uppercase tracking-wider">Arquitectura Unificada</span>
+    
+    <!-- 5. PATRÓN ADAPTER -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl w-full">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #F59E0B">
+           <i data-lucide="plug" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Estructural</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #F59E0B">Adapter (Pagos)</h3>
+        <p class="text-white text-sm mb-4">Traduce la interfaz incompatible de Stripe (3rd-party) a un contrato estándar que el frontend puede usar sin conocer los detalles del proveedor.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ <b>Client:</b> CatalogView llama a <code>procesar()</code>.</li>
+           <li>✓ <b>Client Interface:</b> IPaymentPort define el contrato.</li>
+           <li>✓ <b>Adapter:</b> StripeAdapter implementa IPaymentPort y <i>envuelve</i> al Service.</li>
+           <li>✓ <b>Service:</b> StripeSDK con su interfaz propia <code>createCheckoutSession()</code>.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction LR
+
+    class CatalogView {
+        +handleEnroll(courseId) void
+    }
+
+    class IPaymentPort {
+        &lt;&lt;interface&gt;&gt;
+        +procesar(request) PaymentResponse
+    }
+
+    class StripeAdapter {
+        -stripeSDK: StripeSDK
+        +procesar(request) PaymentResponse
+    }
+
+    class ManualAdapter {
+        +procesar(request) PaymentResponse
+    }
+
+    class StripeSDK {
+        &lt;&lt;Service - 3rd party&gt;&gt;
+        +createCheckoutSession(lineItems) Session
+        +retrieveSession(sessionId) Session
+    }
+
+    CatalogView ..&gt; IPaymentPort : Usa interfaz
+    IPaymentPort &lt;|.. StripeAdapter : Implementa
+    IPaymentPort &lt;|.. ManualAdapter : Implementa
+    StripeAdapter o-- StripeSDK : Envuelve y traduce
+         </div>
+      </div>
+    </section>
+
+
+    <!-- 6. PATRÓN BRIDGE -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl w-full">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #F97316">
+           <i data-lucide="radio" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Estructural</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #F97316">Bridge (Notificaciones)</h3>
+        <p class="text-white text-sm mb-4">Separa la abstracción de notificaciones (Urgente, Estándar) de su implementación de envío (Toast, Email), permitiendo que escalen de forma independiente.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ Inversión de dependencias (React no depende de Zustand).</li>
+           <li>✓ Permite agregar nuevos canales (Email, SMS) sin tocar la lógica de la UI.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction TB
+    class Sender {
+        &lt;&lt;interface&gt;&gt;
+        +send(message, type) void
+    }
+    class ToastSender {
+        +send(message, type) void
+    }
+    class EmailSender {
+        +send(message, type) void
+    }
+    class Notification {
+        &lt;&lt;abstract&gt;&gt;
+        #sender: Sender
+        +notify(message, type) void
+    }
+    class UrgentNotification {
+        +notify(message, type) void
+    }
+    Sender &lt;|-- ToastSender : Implementa
+    Sender &lt;|-- EmailSender : Implementa
+    Notification o-- Sender : Bridge
+    Notification &lt;|-- UrgentNotification : Extiende
+         </div>
+      </div>
+    </section>
+
+    <!-- 7. PATRÓN COMPOSITE -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl w-full">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #EF4444">
+           <i data-lucide="network" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Estructural</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #EF4444">Composite (Navegación)</h3>
+        <p class="text-white text-sm mb-4">Agrupa elementos de navegación de forma jerárquica, permitiendo tratar un enlace simple (Hoja) y un grupo de enlaces (Compuesto) de manera idéntica en el renderizado.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ Recursividad elegante sin límites de profundidad.</li>
+           <li>✓ Aplica para Menús y Categorías anidadas.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction TD
+    class MenuComponent {
+        &lt;&lt;abstract&gt;&gt;
+        +renderData() Object
+    }
+    class MenuItem {
+        +label: String
+        +to: String
+        +renderData() Object
+    }
+    class MenuGroup {
+        +label: String
+        -children: Array~MenuComponent~
+        +add(component) void
+        +renderData() Object
+    }
+    MenuComponent &lt;|-- MenuItem : Implementa
+    MenuComponent &lt;|-- MenuGroup : Implementa
+    MenuGroup o-- MenuComponent : Contiene
+         </div>
+      </div>
+    </section>
+
+    <!-- 8. PATRÓN DECORATOR -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl w-full">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #EC4899">
+           <i data-lucide="layers" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Estructural</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #EC4899">Decorator (Precios)</h3>
+        <p class="text-white text-sm mb-4">Envuelve el precio base del curso con múltiples capas dinámicas independientes (Impuestos, Descuentos) para calcular el precio final y generar un desglose detallado.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ Evita la anidación infinita de ifs (Open/Closed Principle).</li>
+           <li>✓ Genera facturas detalladas transparentemente.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction TD
+    class CoursePrice {
+        &lt;&lt;abstract&gt;&gt;
+        +getPrice() Number
+        +getBreakdown() Array
+    }
+    class BasePrice {
+        +getPrice() Number
+    }
+    class PriceDecorator {
+        &lt;&lt;abstract&gt;&gt;
+        #wrapped: CoursePrice
+        +getPrice() Number
+    }
+    class TaxDecorator {
+        +getPrice() Number
+    }
+    class StudentDiscountDecorator {
+        +getPrice() Number
+    }
+    CoursePrice &lt;|-- BasePrice : Implementa
+    CoursePrice &lt;|-- PriceDecorator : Implementa
+    PriceDecorator o-- CoursePrice : Envuelve
+    PriceDecorator &lt;|-- TaxDecorator : Extiende
+    PriceDecorator &lt;|-- StudentDiscountDecorator : Extiende
+         </div>
+      </div>
+    </section>
+
+    <!-- 9. PATRÓN PROXY -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-12">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl w-full">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #6366F1">
+           <i data-lucide="shield" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Estructural</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #6366F1">Proxy (Seguridad y Caché)</h3>
+        <p class="text-white text-sm mb-4">Proporciona un sustituto para controlar el acceso a los servicios originales, añadiendo caché, seguridad y auditoría sin modificar la lógica base.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ Cache para métricas.</li>
+           <li>✓ Protección basada en Roles.</li>
+           <li>✓ Auditoría silenciosa.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction TD
+    class ICourseService {
+        &lt;&lt;interface&gt;&gt;
+        +deleteCourse()
+    }
+    class RealCourseService {
+        +deleteCourse()
+    }
+    class CourseProtectionProxy {
+        -realService: RealCourseService
+        +deleteCourse()
+    }
+    class IMetricsService {
+        &lt;&lt;interface&gt;&gt;
+        +getDashboardMetrics()
+    }
+    class RealMetricsService {
+        +getDashboardMetrics()
+    }
+    class MetricsCacheProxy {
+        -realService: RealMetricsService
+        -cache: Object
+        +getDashboardMetrics()
+    }
+    ICourseService &lt;|-- RealCourseService : Implementa
+    ICourseService &lt;|-- CourseProtectionProxy : Implementa
+    CourseProtectionProxy o-- RealCourseService : Controla
+    
+    IMetricsService &lt;|-- RealMetricsService : Implementa
+    IMetricsService &lt;|-- MetricsCacheProxy : Implementa
+    MetricsCacheProxy o-- RealMetricsService : Controla
+         </div>
+      </div>
+    </section>
+
+    <!-- 10. PATRÓN FACADE -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-12">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl w-full">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #14B8A6">
+           <i data-lucide="columns" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Estructural</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #14B8A6">Facade (Inscripciones)</h3>
+        <p class="text-white text-sm mb-4">Oculta la complejidad de múltiples subsistemas (Pagos, Notificaciones) detrás de una interfaz simplificada para el Frontend.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ Evita el "God Component" en React.</li>
+           <li>✓ Ventanilla única de comunicación.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction LR
+    class CatalogView {
+        +handleEnroll()
+    }
+    class EnrollmentFacade {
+        +processEnrollment()
+    }
+    class PaymentFactory {
+        +getAdapter()
+    }
+    class NotificationFactory {
+        +create()
+    }
+    CatalogView ..&gt; EnrollmentFacade : Consume
+    EnrollmentFacade ..&gt; PaymentFactory : Subsistema
+    EnrollmentFacade ..&gt; NotificationFactory : Subsistema
+         </div>
+      </div>
+    </section>
+
+    <!-- 11. PATRÓN FLYWEIGHT -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-12">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl w-full">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #84CC16">
+           <i data-lucide="leaf" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Estructural</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #84CC16">Flyweight (Optimización RAM)</h3>
+        <p class="text-white text-sm mb-4">Comparte referencias en memoria para entidades repetidas (Profesores y Categorías) reduciendo drásticamente la creación de objetos.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ Mantiene un Pool estático.</li>
+           <li>✓ Acelera React DOM Diffing.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction TD
+    class CatalogView {
+        +queryFn()
+    }
+    class EntityFlyweightFactory {
+        -professors: Map
+        -categories: Map
+        +getProfessor()
+        +getCategory()
+    }
+    class Professor {
+        +id: UUID
+        +name: String
+    }
+    class Category {
+        +id: UUID
+        +name: String
+    }
+    CatalogView ..&gt; EntityFlyweightFactory : Solicita Referencia
+    EntityFlyweightFactory o-- Professor : Pool compartido
+    EntityFlyweightFactory o-- Category : Pool compartido
+         </div>
+      </div>
+    </section>
+
+    <!-- 12. DIAGRAMA MAESTRO (ARQUITECTURA COMPLETA) -->
+    <section id="master-diagram-section" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 overflow-auto shadow-inner">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-1.5 text-pink-400">
+           <i data-lucide="git-fork" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Arquitectura Unificada</span>
+        </div>
+        <button onclick="toggleFullscreen()" class="bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-pink-500/20">
+          <i data-lucide="maximize" class="w-4 h-4"></i>
+          Ver en Pantalla Completa
+        </button>
       </div>
       <h3 class="text-xl font-bold text-white mb-2 m-0">Diagrama Maestro: Capa de Datos + Capa de Lógica</h3>
       <p class="text-white text-sm mb-6">Mapeo unificado de las tablas de Supabase (Cajas Grises) consumidas y administradas por los Patrones de Diseño implementados (Cajas Azules/Púrpuras).</p>
@@ -197,6 +660,358 @@ classDiagram
     direction TD
 
     %% === CAPA DE DATOS (TABLAS DE SUPABASE) ===
+    namespace Base_de_Datos_Supabase {
+        class Course {
+            +UUID id
+            +String title
+            +String description
+            +UUID category_id
+            +UUID professor_id
+            +Number price
+            +Number capacity
+            +Number enrolled_count
+            +Date start_date
+            +Date end_date
+            +Time start_time
+            +Time end_time
+            +String days_of_week
+            +String status
+            +Boolean is_published
+            +Boolean is_deleted
+            +String requirements
+        }
+        class Profile {
+            +UUID id
+            +String email
+            +String full_name
+            +String role
+            +String avatar_url
+            +Boolean is_active
+            +Boolean is_deleted
+            +Date created_at
+        }
+        class Enrollment {
+            +UUID id
+            +UUID user_id
+            +UUID course_id
+            +String payment_status
+            +String completion_status
+            +Number paid_amount
+            +Date enrolled_at
+        }
+        class Payment {
+            +UUID id
+            +UUID enrollment_id
+            +UUID user_id
+            +String stripe_payment_id
+            +Number amount
+            +String currency
+            +String status
+        }
+        class Professor {
+            +UUID id
+            +String name
+            +String email
+            +String photo_url
+            +Boolean is_active
+        }
+        class Category {
+            +UUID id
+            +String name
+            +String icon
+            +String color
+        }
+        class Review {
+            +UUID id
+            +UUID course_id
+            +UUID user_id
+            +Number rating
+            +String comment
+        }
+        class AuditLog {
+            +UUID id
+            +UUID user_id
+            +String table_name
+            +String operation
+            +JSONB new_values
+        }
+    }
+
+    %% === AGRUPACIONES LÓGICAS (NAMESPACES) ===
+    namespace Vistas_React {
+        class Catalog_View {
+            +courses : Array
+            +selectedCourse : Object
+            +enrolling : Boolean
+            +handleEnroll() void
+            +queryFn() Promise
+        }
+        class AdminCourses_View {
+            +selectedCourse : Object
+            +handleCloneCourse() void
+            +handleSave() void
+        }
+        class MenuComponent {
+            &lt;&lt;abstract&gt;&gt;
+            +renderData() Object
+        }
+        class MenuItem {
+            +label: String
+            +to: String
+            +renderData() Object
+        }
+        class MenuGroup {
+            +label: String
+            -children: Array~MenuComponent~
+            +add(component) void
+            +renderData() Object
+        }
+    }
+
+    namespace Patrones_de_Diseno {
+        class CourseQueryBuilder {
+            +courses: Array
+            +excludePaid(paidIds) CourseQueryBuilder
+            +withSearch(query) CourseQueryBuilder
+            +withSchedule(type) CourseQueryBuilder
+            +onlyAvailable(flag) CourseQueryBuilder
+            +build() Array
+        }
+        class PaymentFactory {
+            +getAdapter(method) IPaymentPort
+        }
+        class IPaymentPort {
+            &lt;&lt;interface&gt;&gt;
+            +procesar(request) PaymentResponse
+        }
+        class StripeAdapter {
+            -stripeSDK: StripeSDK
+            +procesar(request) PaymentResponse
+        }
+        class ManualAdapter {
+            +procesar(request) PaymentResponse
+        }
+        class StripeSDK {
+            &lt;&lt;Service - 3rd party&gt;&gt;
+            +createCheckoutSession(lineItems) Session
+            +retrieveSession(sessionId) Session
+        }
+        class Notification {
+            &lt;&lt;abstract&gt;&gt;
+            #sender: Sender
+            +notify(message, type) void
+        }
+        class UrgentNotification {
+            +notify(message, type) void
+        }
+        class Sender {
+            &lt;&lt;interface&gt;&gt;
+            +send(message, type) void
+        }
+        class ToastSender {
+            +send(message, type) void
+        }
+        class EmailSender {
+            +send(message, type) void
+        }
+        class CoursePrice {
+            &lt;&lt;abstract&gt;&gt;
+            +getPrice() Number
+            +getBreakdown() Array
+        }
+        class BasePrice {
+            +getPrice() Number
+        }
+        class PriceDecorator {
+            &lt;&lt;abstract&gt;&gt;
+            #wrapped: CoursePrice
+            +getPrice() Number
+        }
+        class TaxDecorator {
+            +getPrice() Number
+        }
+        class StudentDiscountDecorator {
+            +getPrice() Number
+        }
+        class UIFactoryProvider {
+            +getFactory(role, profile) UIFactory
+        }
+        class UIFactory {
+            &lt;&lt;abstract&gt;&gt;
+            +getSidebarItems() Array
+            +getShellStyles() String
+        }
+        class StudentUIFactory {
+            +profile: Object
+            +getSidebarItems() Array
+        }
+        class AdminUIFactory {
+            +getSidebarItems() Array
+        }
+        class EnrollmentFacade {
+            +processEnrollment()
+        }
+        class EntityFlyweightFactory {
+            -professors: Map
+            -categories: Map
+            +getProfessor()
+            +getCategory()
+        }
+        class ICourseService {
+            &lt;&lt;interface&gt;&gt;
+            +deleteCourse()
+        }
+        class RealCourseService {
+            +deleteCourse()
+        }
+        class CourseProtectionProxy {
+            -realService: RealCourseService
+            +deleteCourse()
+        }
+        class IMetricsService {
+            &lt;&lt;interface&gt;&gt;
+            +getDashboardMetrics()
+        }
+        class RealMetricsService {
+            +getDashboardMetrics()
+        }
+        class MetricsCacheProxy {
+            -realService: RealMetricsService
+            -cache: Object
+            +getDashboardMetrics()
+        }
+        class AuditEnrollmentProxy {
+            +processEnrollment()
+        }
+    }
+
+    %% === RELACIONES: VISTAS -> PATRONES ===
+    Catalog_View ..&gt; CourseQueryBuilder : Usa para buscador
+    Catalog_View ..&gt; EnrollmentFacade : Consume
+    Catalog_View ..&gt; EntityFlyweightFactory : Solicita Refs
+    
+    MenuComponent &lt;|-- MenuItem : Implementa
+    MenuComponent &lt;|-- MenuGroup : Implementa
+    MenuGroup o-- MenuComponent : Contiene
+    
+    %% === RELACIONES: PATRONES -> PATRONES ===
+    CourseQueryBuilder ..&gt; CoursePrice : Consume
+    CoursePrice &lt;|-- BasePrice : Implementa
+    CoursePrice &lt;|-- PriceDecorator : Implementa
+    PriceDecorator o-- CoursePrice : Envuelve
+    PriceDecorator &lt;|-- TaxDecorator : Extiende
+    PriceDecorator &lt;|-- StudentDiscountDecorator : Extiende
+    
+    EnrollmentFacade ..&gt; PaymentFactory : Subsistema Pagos
+    EnrollmentFacade ..&gt; Notification : Subsistema Notif
+    AuditEnrollmentProxy o-- EnrollmentFacade : Audita
+
+    PaymentFactory ..&gt; IPaymentPort : Despacha
+    IPaymentPort &lt;|.. StripeAdapter : Implementa
+    IPaymentPort &lt;|.. ManualAdapter : Implementa
+    StripeAdapter o-- StripeSDK : Envuelve y traduce
+    
+    Notification o-- Sender : Bridge
+    Notification &lt;|-- UrgentNotification : Extiende
+    Sender &lt;|-- ToastSender : Implementa
+    Sender &lt;|-- EmailSender : Implementa
+    
+    UIFactoryProvider ..&gt; UIFactory : Despacha
+    UIFactory &lt;|-- StudentUIFactory : Concretiza
+    UIFactory &lt;|-- AdminUIFactory : Concretiza
+
+    ICourseService &lt;|-- RealCourseService : Implementa
+    ICourseService &lt;|-- CourseProtectionProxy : Implementa
+    CourseProtectionProxy o-- RealCourseService : Controla
+    
+    IMetricsService &lt;|-- RealMetricsService : Implementa
+    IMetricsService &lt;|-- MetricsCacheProxy : Implementa
+    MetricsCacheProxy o-- RealMetricsService : Controla
+
+    %% === RELACIONES: PATRONES/VISTAS -> BASE DE DATOS ===
+    AdminCourses_View ..&gt; Course : Administra y Prototipa
+    CourseQueryBuilder ..&gt; Course : Filtra
+    ManualAdapter ..&gt; Enrollment : Inserta Fila en
+    StripeAdapter ..&gt; Payment : Registra Transacción
+    UIFactory ..&gt; Profile : Evalúa para dibujar UI
+    CourseProtectionProxy ..&gt; Course : Protege acceso
+    MetricsCacheProxy ..&gt; Enrollment : Cachea datos
+    EntityFlyweightFactory o-- Professor : Pool
+    EntityFlyweightFactory o-- Category : Pool
+
+    %% === RELACIONES: BASE DE DATOS -> BASE DE DATOS ===
+    Course "1" *-- "M" Enrollment : Tiene
+    Profile "1" *-- "M" Enrollment : Se Matricula
+    Enrollment "1" *-- "1" Payment : Genera
+    Course "1" *-- "1" Category : Pertenece
+    Course "1" *-- "1" Professor : Dicta
+    Course "1" *-- "M" Review : Recibe
+    Profile "1" *-- "M" Review : Escribe
+    Profile "1" *-- "M" AuditLog : Deja
+
+    %% === ESTILOS ESTRICTOS ===
+    style Course fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Profile fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Enrollment fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Payment fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Professor fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Category fill:#1e293b,stroke:#475569,stroke-width:1px
+    style Review fill:#1e293b,stroke:#475569,stroke-width:1px
+    style AuditLog fill:#1e293b,stroke:#475569,stroke-width:1px
+
+    style Catalog_View fill:#1e3a8a,stroke:#3b82f6,stroke-width:1px
+    style AdminCourses_View fill:#1e3a8a,stroke:#3b82f6,stroke-width:1px
+    style CourseQueryBuilder fill:#4c1d95,stroke:#8b5cf6,stroke-width:1px
+    style IPaymentPort fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style StripeAdapter fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style ManualAdapter fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style StripeSDK fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style Notification fill:#ea580c,stroke:#f97316,stroke-width:1px
+    style UrgentNotification fill:#ea580c,stroke:#f97316,stroke-width:1px
+    style Sender fill:#ea580c,stroke:#f97316,stroke-width:1px
+    style ToastSender fill:#ea580c,stroke:#f97316,stroke-width:1px
+    style EmailSender fill:#ea580c,stroke:#f97316,stroke-width:1px
+    style CoursePrice fill:#be185d,stroke:#ec4899,stroke-width:1px
+    style BasePrice fill:#be185d,stroke:#ec4899,stroke-width:1px
+    style PriceDecorator fill:#be185d,stroke:#ec4899,stroke-width:1px
+    style TaxDecorator fill:#be185d,stroke:#ec4899,stroke-width:1px
+    style StudentDiscountDecorator fill:#be185d,stroke:#ec4899,stroke-width:1px
+    style MenuComponent fill:#b91c1c,stroke:#ef4444,stroke-width:1px
+    style MenuItem fill:#b91c1c,stroke:#ef4444,stroke-width:1px
+    style MenuGroup fill:#b91c1c,stroke:#ef4444,stroke-width:1px
+    style PaymentFactory fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style UIFactoryProvider fill:#581c87,stroke:#a855f7,stroke-width:1px
+    style UIFactory fill:#581c87,stroke:#a855f7,stroke-width:1px
+    style StudentUIFactory fill:#581c87,stroke:#a855f7,stroke-width:1px
+    style AdminUIFactory fill:#581c87,stroke:#a855f7,stroke-width:1px
+    style EnrollmentFacade fill:#0f766e,stroke:#14b8a6,stroke-width:1px
+    style EntityFlyweightFactory fill:#3f6212,stroke:#84cc16,stroke-width:1px
+    style ICourseService fill:#4338ca,stroke:#6366f1,stroke-width:1px
+    style RealCourseService fill:#4338ca,stroke:#6366f1,stroke-width:1px
+    style CourseProtectionProxy fill:#4338ca,stroke:#6366f1,stroke-width:1px
+    style IMetricsService fill:#4338ca,stroke:#6366f1,stroke-width:1px
+    style RealMetricsService fill:#4338ca,stroke:#6366f1,stroke-width:1px
+    style MetricsCacheProxy fill:#4338ca,stroke:#6366f1,stroke-width:1px
+    style AuditEnrollmentProxy fill:#4338ca,stroke:#6366f1,stroke-width:1px
+         </div>
+    </section>
+
+    <!-- Diagrama Simple (Solo Base de Datos) -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 flex flex-col items-start justify-center shadow-lg">
+        <div class="flex items-center gap-3 mb-4">
+          <i data-lucide="database" class="w-6 h-6 text-emerald-400"></i>
+          <h2 class="text-2xl font-bold text-slate-100">Modelo de Dominio (BD)</h2>
+        </div>
+        <p class="text-slate-400 text-sm leading-relaxed mb-6">
+          Esquema simplificado que muestra únicamente las entidades de la base de datos (Supabase) y sus relaciones directas, sin incluir la capa de lógica ni los patrones de diseño. Ideal para entender la estructura de persistencia.
+        </p>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction TD
+
     class Course {
         +UUID id
         +String title
@@ -272,52 +1087,6 @@ classDiagram
         +JSONB new_values
     }
 
-    %% === CAPA DE LÓGICA (VISTAS Y PATRONES) ===
-    class Catalog_View {
-        +courses : Array
-        +selectedCourse : Object
-        +enrolling : Boolean
-        +handleEnroll() void
-    }
-    class AdminCourses_View {
-        +selectedCourse : Object
-        +handleCloneCourse() void
-        +handleSave() void
-    }
-    class CourseQueryBuilder {
-        +courses : Array
-        +excludePaid() CourseQueryBuilder
-        +withSearch() CourseQueryBuilder
-        +build() Array
-    }
-    class PaymentProcessor {
-        &lt;&lt;abstract&gt;&gt;
-        +checkout() Promise
-    }
-    class StripeProcessor {
-        +checkout() Promise
-    }
-    class ManualProcessor {
-        +checkout() Promise
-    }
-    class PaymentFactory {
-        +getProcessor() PaymentProcessor
-    }
-    class UIFactory {
-        &lt;&lt;abstract&gt;&gt;
-        +getSidebarItems() Array
-    }
-    class StudentUIFactory {
-        +getSidebarItems() Array
-    }
-    class AdminUIFactory {
-        +getSidebarItems() Array
-    }
-    class UIFactoryProvider {
-        +getFactory() UIFactory
-    }
-
-    %% === RELACIONES ---
     Course "1" *-- "M" Enrollment : Tiene
     Profile "1" *-- "M" Enrollment : Se Matricula
     Enrollment "1" *-- "1" Payment : Genera
@@ -327,20 +1096,6 @@ classDiagram
     Profile "1" *-- "M" Review : Escribe
     Profile "1" *-- "M" AuditLog : Deja
 
-    Catalog_View ..&gt; CourseQueryBuilder : Usa para buscador
-    Catalog_View ..&gt; PaymentFactory : Consume
-    AdminCourses_View ..&gt; Course : Administra y Prototipa
-    CourseQueryBuilder ..&gt; Course : Filtra Array de
-    PaymentFactory ..&gt; PaymentProcessor : Despacha
-    PaymentProcessor &lt;|-- StripeProcessor
-    PaymentProcessor &lt;|-- ManualProcessor
-    ManualProcessor ..&gt; Enrollment : Inserta Fila en
-    UIFactoryProvider ..&gt; UIFactory : Despacha
-    UIFactory &lt;|-- StudentUIFactory
-    UIFactory &lt;|-- AdminUIFactory
-    UIFactory ..&gt; Profile : Evalúa para dibujar UI
-
-    %% === ESTILOS ESTRICTOS ===
     style Course fill:#1e293b,stroke:#475569,stroke-width:1px
     style Profile fill:#1e293b,stroke:#475569,stroke-width:1px
     style Enrollment fill:#1e293b,stroke:#475569,stroke-width:1px
@@ -349,26 +1104,19 @@ classDiagram
     style Category fill:#1e293b,stroke:#475569,stroke-width:1px
     style Review fill:#1e293b,stroke:#475569,stroke-width:1px
     style AuditLog fill:#1e293b,stroke:#475569,stroke-width:1px
-
-    style Catalog_View fill:#1e3a8a,stroke:#3b82f6,stroke-width:1px
-    style AdminCourses_View fill:#1e3a8a,stroke:#3b82f6,stroke-width:1px
-    style CourseQueryBuilder fill:#4c1d95,stroke:#8b5cf6,stroke-width:1px
-    style PaymentProcessor fill:#064e3b,stroke:#10b981,stroke-width:1px
-    style StripeProcessor fill:#064e3b,stroke:#10b981,stroke-width:1px
-    style ManualProcessor fill:#064e3b,stroke:#10b981,stroke-width:1px
-    style PaymentFactory fill:#064e3b,stroke:#10b981,stroke-width:1px
-    style UIFactoryProvider fill:#581c87,stroke:#a855f7,stroke-width:1px
-    style UIFactory fill:#581c87,stroke:#a855f7,stroke-width:1px
-    style StudentUIFactory fill:#581c87,stroke:#a855f7,stroke-width:1px
-    style AdminUIFactory fill:#581c87,stroke:#a855f7,s059669,stroke-width:1px
+         </div>
       </div>
     </section>
 
   </main>
 
+  <!-- svg-pan-zoom for interactive diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  
   <!-- Script initialization -->
   <script>
     mermaid.initialize({
+      startOnLoad: false,
       theme: 'base',
       themeVariables: {
         primaryColor: '#3730a3',
@@ -379,7 +1127,38 @@ classDiagram
         tertiaryColor: '#312e81'
       }
     });
+
+    mermaid.run({ querySelector: '.mermaid' }).then(() => {
+      document.querySelectorAll('.mermaid svg').forEach(svg => {
+        // Establecer un alto mínimo para que el zoom funcione bien
+        const height = svg.getAttribute('height') || '500';
+        svg.style.height = parseInt(height) > 400 ? '600px' : '400px';
+        svg.style.width = '100%';
+        svg.style.maxWidth = 'none';
+        
+        svgPanZoom(svg, {
+          zoomEnabled: true,
+          controlIconsEnabled: true,
+          fit: true,
+          center: true,
+          minZoom: 0.5,
+          maxZoom: 10
+        });
+      });
+    });
+
     lucide.createIcons();
+
+    function toggleFullscreen() {
+      const elem = document.getElementById("master-diagram-section");
+      if (!document.fullscreenElement) {
+        elem.requestFullscreen().catch(err => {
+          console.error(`Error al intentar entrar en pantalla completa: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
   </script>
 
 </body>

@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Arquitectura de Componentes de Software - Clean Architecture</title>
-  <!-- Tailwind CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
   <!-- Mermaid.js -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <!-- Lucide Icons -->
@@ -85,26 +84,34 @@ flowchart TD
     subgraph LayerLogica ["⚙️ 2. CAPA DE LÓGICA DE NEGOCIO (Aplicación)"]
         direction TB
         subgraph UseCases ["Casos de Uso / Use Cases"]
+            Facade["🏢 Facade Pattern\n(Orchestration)"]
             UC_Enroll["Inscribir Estudiante"]
             UC_Course["Gestionar Curso"]
             UC_Audit["Registrar Auditoría"]
         end
         subgraph Patterns ["Patrones de Diseño Implementados"]
-            Factory["🏭 Factory Pattern\n(User Profiles)"]
-            Builder["🧱 Builder Pattern\n(Enrollment Flow)"]
-            Prototype["🧬 Prototype Pattern\n(Clone Course)"]
+            Factory["🏭 Factory\n(User Profiles)"]
+            Builder["🧱 Builder\n(Enrollment Flow)"]
+            Prototype["🧬 Prototype\n(Clone Course)"]
             AbsFactory["🏗️ Abstract Factory\n(Course Categories)"]
+            Adapter["🔌 Adapter\n(Stripe Payments)"]
+            Bridge["🌉 Bridge\n(Notifications)"]
+            Composite["🌳 Composite\n(Nav/Categories)"]
+            Decorator["🎀 Decorator\n(Course Pricing)"]
         end
+        Facade --&gt; UC_Enroll
+        Facade --&gt; UC_Course
         UC_Enroll --&gt; Builder
         UC_Course --&gt; Prototype
         UC_Course --&gt; AbsFactory
     end
 
-    %% === 3. CAPA DE DATOS ===
-    subgraph LayerInfra ["🗄️ 3. CAPA DE INFRAESTRUCTURA (Datos)"]
+    %% === 3. CAPA DE INFRAESTRUCTURA ===
+    subgraph LayerInfra ["🗄️ 3. CAPA DE INFRAESTRUCTURA (Datos e Integración)"]
         direction TB
         SupaSDK["Supabase Client SDK"]
         AuthService["Supabase Auth Service"]
+        StripeAPI["Stripe API (Pasarela)"]
         subgraph DB [PostgreSQL Database]
             T_Profiles[("profiles")]
             T_Courses[("courses")]
@@ -116,24 +123,27 @@ flowchart TD
     end
 
     %% === CONEXIONES ENTRE CAPAS ===
-    Hooks --&gt;|Consume| UseCases
+    Hooks --&gt;|Consume| Facade
+    Facade --&gt;|Delega| Adapter
+    Facade --&gt;|Dispara| Bridge
+    Adapter --&gt;|Procesa Pago| StripeAPI
     Patterns --&gt;|Inyecta persistencia| SupaSDK
     AuthService -.->|Identidad| Factory
 
     %% === NOTAS EXPLICATIVAS ===
-    Note1["📝 NOTA 1: Builder Pattern\nValida cupos y estados de pago,\nencadena .withPayment() antes\nde disparar la inserción en DB."]
-    Note2["📝 NOTA 2: Prototype Pattern\nAdminCourses duplica cursos vacacionales\nbypassando IDs primarios de la\ncapa de entidades directamente."]
-    Note3["📝 NOTA 3: Flujo de Matrícula\nVista ➡️ Custom Hook ➡️ Interactor ➡️ Builder ➡️ PostgreSQL"]
+    Note1["📝 NOTA 1: Flujo de Orquestación\nUI ➡️ Facade ➡️ Adapter/Bridge ➡️ Supabase/Stripe."]
+    Note2["📝 NOTA 2: Structural Patterns\nAdapter unifica pagos, Bridge separa lógica\nde notificaciones de su renderizado."]
+    Note3["📝 NOTA 3: Flujo de Matrícula\nVista ➡️ Custom Hook ➡️ Facade ➡️ Builder ➡️ PostgreSQL"]
 
-    Builder --- Note1
-    Prototype --- Note2
+    Facade --- Note1
+    Adapter --- Note2
     UC_Enroll --- Note3
 
     %% === ASIGNACIÓN DE ESTILOS ===
     class LayerPresentacion,LayerLogica,LayerInfra layer;
     class MainView,AppCore,Views,State,Router,Hooks,V_Student,V_Professor,V_Admin frontend;
-    class UseCases,Patterns,UC_Enroll,UC_Course,UC_Audit,Factory,Builder,Prototype,AbsFactory logic;
-    class SupaSDK,AuthService,DB,T_Profiles,T_Courses,T_Enroll,T_Payments data;
+    class UseCases,Patterns,UC_Enroll,UC_Course,UC_Audit,Factory,Builder,Prototype,AbsFactory,Adapter,Bridge,Composite,Decorator,Facade logic;
+    class SupaSDK,AuthService,DB,T_Profiles,T_Courses,T_Enroll,T_Payments,StripeAPI data;
     class Note1,Note2,Note3 note;
         </div>
       </section>

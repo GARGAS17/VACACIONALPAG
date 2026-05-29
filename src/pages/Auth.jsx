@@ -78,7 +78,7 @@ export default function Auth() {
             <span>o usa tu correo para registrarte</span>
             <input type="text" placeholder="Nombre" value={name} onChange={(e)=>setName(e.target.value)} required />
             <input type="email" placeholder="Correo" value={email} onChange={(e)=>setEmail(e.target.value)} required />
-            <input type="password" placeholder="Contraseña" value={password} onChange={(e)=>setPassword(e.target.value)} minLength={6} required />
+            <input type="password" placeholder="Contraseña" value={password} onChange={(e)=>setPassword(e.target.value)} minLength={6} autoComplete="new-password" required />
             <button type="submit" disabled={loading} className="auth-btn">
               {loading ? 'CARGANDO...' : 'REGISTRARSE'}
             </button>
@@ -97,7 +97,7 @@ export default function Auth() {
             </div>
             <span>o usa tu cuenta con correo y contraseña</span>
             <input type="email" placeholder="Correo" value={email} onChange={(e)=>setEmail(e.target.value)} required />
-            <input type="password" placeholder="Contraseña" value={password} onChange={(e)=>setPassword(e.target.value)} required />
+            <input type="password" placeholder="Contraseña" value={password} onChange={(e)=>setPassword(e.target.value)} autoComplete="current-password" required />
             <a href="#">¿Olvidaste tu contraseña?</a>
             <button type="submit" disabled={loading} className="auth-btn">
                {loading ? 'CARGANDO...' : 'INGRESAR'}
