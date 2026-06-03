@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../api/supabase';
-import { DollarSign, TrendingUp, Users, BookOpen, BarChart3, Award, Download } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, BookOpen, BarChart3, Award, Download, Sparkles, X, Loader2 } from 'lucide-react';
 import { DashboardMetricsReport, CSVFormatter, JSONFormatter } from '../../services/reportBridge';
+import { aiTrendAnalyzer } from '../../services/aiAdapter';
 import { metricsService } from '../../services/proxies';
 
 const StatCard = ({ label, value, sub, icon: Icon, color }) => (
@@ -22,6 +23,9 @@ export const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [exportFormat, setExportFormat] = useState('csv');
+  const [isInsightsOpen, setIsInsightsOpen] = useState(false);
+  const [insightsText, setInsightsText] = useState('');
+  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
 
   const handleExport = () => {
     if (!metrics) return;
@@ -29,6 +33,20 @@ export const AdminDashboard = () => {
     const formatter = exportFormat === 'csv' ? new CSVFormatter() : new JSONFormatter();
     const report = new DashboardMetricsReport(formatter);
     report.export('reporte-admin-dashboard', metrics);
+  };
+
+  const handleGenerateInsights = async () => {
+    setIsInsightsOpen(true);
+    if (insightsText) return; 
+    setIsGeneratingInsights(true);
+    try {
+      const response = await aiTrendAnalyzer.generateInsights(metrics);
+      setInsightsText(response);
+    } catch (err) {
+      setInsightsText("Error: " + err.message);
+    } finally {
+      setIsGeneratingInsights(false);
+    }
   };
 
   useEffect(() => {
@@ -71,6 +89,16 @@ export const AdminDashboard = () => {
           <p className="text-slate-400 text-sm m-0">Resumen general de la plataforma en tiempo real</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleGenerateInsights}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-md border-none cursor-pointer"
+          >
+            <Sparkles size={16} />
+            Insights IA
+          </button>
+          
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#334155', margin: '0 4px' }}></div>
+          
           <select 
             value={exportFormat} 
             onChange={(e) => setExportFormat(e.target.value)}
@@ -132,6 +160,51 @@ export const AdminDashboard = () => {
           color="bg-indigo-600"
         />
       </div>
+
+      {/* Modal Insights */}
+      {isInsightsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-700 max-h-[85vh]">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-5 flex items-center justify-between text-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg m-0">Análisis Estratégico IA</h3>
+                  <p className="text-white/80 text-xs m-0">Generado en tiempo real</p>
+                </div>
+              </div>
+              <button onClick={() => setIsInsightsOpen(false)} className="p-2 hover:bg-white/20 rounded-full transition-colors border-none bg-transparent cursor-pointer text-white">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto text-slate-300 text-sm leading-relaxed">
+              {isGeneratingInsights ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                  <Loader2 size={32} className="animate-spin text-purple-500" />
+                  <p className="text-slate-400">La IA está analizando las métricas de tu negocio...</p>
+                </div>
+              ) : (
+                <div className="whitespace-pre-wrap">
+                  {insightsText}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 bg-slate-900/50 border-t border-slate-700 flex justify-end shrink-0">
+              <button 
+                onClick={() => setIsInsightsOpen(false)}
+                className="px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-semibold transition-colors border-none cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

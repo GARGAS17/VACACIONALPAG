@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../api/supabase';
-import { Plus, Search, Pencil, Trash2, AlertTriangle, Users, DollarSign, Image, Upload, Copy } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, AlertTriangle, Users, DollarSign, Image, Upload, Copy, Wand2, Loader2 } from 'lucide-react';
 import { useNotificationStore } from '../../store/useNotificationStore';
+import { aiCourseCopilot } from '../../services/aiAdapter';
 
 const statusColors = {
   published: 'bg-green-500/15 text-green-400',
@@ -23,6 +24,7 @@ export const AdminCourses = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isToggling, setIsToggling] = useState(null);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   // Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -163,6 +165,31 @@ export const AdminCourses = () => {
       addToast({ message: 'Error al guardar: ' + err.message, type: 'error' });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAIGenerate = async () => {
+    if (!formData.title) {
+      addToast({ message: 'Ingresa un título primero para que la IA tenga contexto.', type: 'warning' });
+      return;
+    }
+    setIsGeneratingAI(true);
+    try {
+      const generatedData = await aiCourseCopilot.generateCourseDetails(formData.title);
+      setFormData(prev => ({
+        ...prev,
+        description: generatedData.description || prev.description,
+        price: generatedData.price || prev.price,
+        capacity: generatedData.capacity || prev.capacity,
+        days_of_week: generatedData.days_of_week || prev.days_of_week,
+        start_time: generatedData.start_time || prev.start_time,
+        end_time: generatedData.end_time || prev.end_time,
+      }));
+      addToast({ message: '¡Detalles autocompletados por IA!', type: 'success' });
+    } catch (err) {
+      addToast({ message: err.message, type: 'error' });
+    } finally {
+      setIsGeneratingAI(false);
     }
   };
 
@@ -449,7 +476,19 @@ export const AdminCourses = () => {
             <form onSubmit={handleSave} className="space-y-4">
               <div>
                 <label className="block text-slate-300 text-xs font-semibold mb-1">Título *</label>
-                <input type="text" placeholder="Nombre del curso" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-500" />
+                <div className="flex gap-2">
+                  <input type="text" placeholder="Nombre del curso" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="flex-1 px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-500" />
+                  <button 
+                    type="button" 
+                    onClick={handleAIGenerate}
+                    disabled={isGeneratingAI || !formData.title}
+                    className="px-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 shadow-md border-none cursor-pointer flex items-center justify-center gap-1.5"
+                    title="Autocompletar detalles con IA"
+                  >
+                    {isGeneratingAI ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                    IA
+                  </button>
+                </div>
               </div>
 
               <div>

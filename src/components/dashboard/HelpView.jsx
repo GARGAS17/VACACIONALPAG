@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { MessageSquare, FileText, Ticket, Play, ChevronDown, HelpCircle } from 'lucide-react';
+import SupportChatbot from './SupportChatbot';
 
 export default function HelpView() {
   const [activeFaq, setActiveFaq] = useState(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const popularQuestions = [
     { q: "¿Cómo me inscribo a un curso?", a: "Para inscribirte, ve al Catálogo de Cursos, haz clic en el botón de inscribir que aparece en el curso que te interesa y sigue los pasos para pagar por Stripe." },
@@ -26,7 +28,10 @@ export default function HelpView() {
           </div>
           <h3 className="text-slate-800 font-bold text-sm mb-1">Chatea con Soporte</h3>
           <p className="text-slate-400 text-xs mb-4">Nuestro equipo está listo para ayudarte en tiempo real</p>
-          <button className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold border-none cursor-pointer transition-colors shadow">
+          <button 
+            onClick={() => setIsChatOpen(true)}
+            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold border-none cursor-pointer transition-colors shadow"
+          >
             Iniciar Chat
           </button>
         </div>
@@ -101,6 +106,9 @@ export default function HelpView() {
           </div>
         </div>
       </div>
+
+      {/* Chatbot Modal */}
+      {isChatOpen && <SupportChatbot onClose={() => setIsChatOpen(false)} />}
     </div>
   );
 }
