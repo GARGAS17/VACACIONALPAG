@@ -1,36 +1,85 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Facebook, Globe, Github, Linkedin } from 'lucide-react';
 import './Auth.css';
 import { supabase } from '../api/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationStore } from '../store/useNotificationStore';
+import WafBlockedScreen from '../components/WafBlockedScreen';
 
 export default function Auth() {
   const [isRightPanelActive, setIsRightPanelActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { addToast } = useNotificationStore();
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [isCheckingWaf, setIsCheckingWaf] = useState(true);
+
+  // Verificación inicial del WAF (al recargar la página)
+  useEffect(() => {
+    const verifyWafStatus = async () => {
+      try {
+        const { error: wafError } = await supabase.functions.invoke('waf-guard', {
+          body: { action: 'ping' },
+          headers: { 'x-waf-endpoint': '/auth/init' }
+        });
+        if (wafError) {
+          setIsBlocked(true);
+        }
+      } catch (err) {
+        setIsBlocked(true);
+      } finally {
+        setIsCheckingWaf(false);
+      }
+    };
+    verifyWafStatus();
+  }, []);
   
   // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
 
+  // Verifica si el error proviene del WAF (IP bloqueada o SQLi detectado)
+  const isWafBlocked = (err) => {
+    return err?.status === 403 || err?.code === 'WAF_BLOCKED' ||
+      (typeof err?.message === 'string' && err.message.includes('WAF_BLOCKED'));
+  };
+
   const handleSignUp = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    const emailTrimmed = email.trim().toLowerCase();
+
+    // ── FILTRO WAF ──
+    try {
+      const { error: wafError } = await supabase.functions.invoke('waf-guard', {
+        body: { email: emailTrimmed, password, name: name.trim() },
+        headers: { 'x-waf-endpoint': '/auth/signup' }
+      });
+      if (wafError) throw wafError; 
+    } catch (err) {
+      setIsBlocked(true);
+      setLoading(false);
+      return;
+    }
+
     const { error, data } = await supabase.auth.signUp({
-      email,
+      email: emailTrimmed,
       password,
       options: {
         data: {
-          full_name: name
+          full_name: name.trim()
         }
       }
     });
     setLoading(false);
     if (error) {
-      addToast({ type: 'error', message: error.message });
+      if (isWafBlocked(error)) {
+        addToast({ type: 'error', message: '🚫 Acceso denegado. Tu dirección IP ha sido bloqueada.' });
+      } else {
+        addToast({ type: 'error', message: error.message });
+      }
     } else {
       if (data?.session) {
         addToast({ type: 'success', message: 'Registro completado.' });
@@ -46,20 +95,52 @@ export default function Auth() {
   const handleSignIn = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
+    const emailTrimmed = email.trim().toLowerCase();
+
+    // ── FILTRO WAF ──
+    try {
+      const { error: wafError } = await supabase.functions.invoke('waf-guard', {
+        body: { email: emailTrimmed, password },
+        headers: { 'x-waf-endpoint': '/auth/signin' }
+      });
+      if (wafError) throw wafError; 
+    } catch (err) {
+      setIsBlocked(true);
+      setLoading(false);
+      return;
+    }
+
     const { error, data } = await supabase.auth.signInWithPassword({
-      email,
+      email: emailTrimmed,
       password,
     });
     setLoading(false);
     if (error) {
-      const msg = error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')
-         ? 'Por favor, confirma tu correo electrónico antes de iniciar sesión.'
-         : 'Credenciales inválidas';
-      addToast({ type: 'error', message: msg });
+      if (isWafBlocked(error)) {
+        addToast({ type: 'error', message: '🚫 Acceso denegado. Tu dirección IP ha sido bloqueada.' });
+      } else {
+        const msg = error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')
+           ? 'Por favor, confirma tu correo electrónico antes de iniciar sesión.'
+           : 'Credenciales inválidas';
+        addToast({ type: 'error', message: msg });
+      }
     } else if (data?.session) {
       navigate('/');
     }
   };
+
+  if (isCheckingWaf) {
+    return (
+      <div className="min-h-screen bg-[#f6f5f7] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (isBlocked) {
+    return <WafBlockedScreen />;
+  }
 
   return (
     <div className="auth-wrapper">

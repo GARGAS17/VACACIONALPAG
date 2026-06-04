@@ -299,13 +299,13 @@ export default function Catalog() {
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={() => setPaymentMethod('stripe')} 
-                    className={`p-3 rounded-xl border text-center text-xs font-bold cursor-pointer transition-colors ${paymentMethod === 'stripe' ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
+                    className={`p-3 rounded-xl border text-center text-xs font-bold cursor-pointer transition-colors ${paymentMethod === 'stripe' ? 'border-green-600 bg-green-50/50 text-green-700' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
                   >
                     Tarjeta (Stripe)
                   </button>
                   <button 
                     onClick={() => setPaymentMethod('manual')} 
-                    className={`p-3 rounded-xl border text-center text-xs font-bold cursor-pointer transition-colors ${paymentMethod === 'manual' ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
+                    className={`p-3 rounded-xl border text-center text-xs font-bold cursor-pointer transition-colors ${paymentMethod === 'manual' ? 'border-green-600 bg-green-50/50 text-green-700' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
                   >
                     Transferencia / Efectivo
                   </button>

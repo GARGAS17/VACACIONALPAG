@@ -258,7 +258,7 @@ export const AdminCourses = () => {
         </div>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-900/30 border-none cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-green-900/30 border-none cursor-pointer"
         >
           <Plus size={16} />
           Nuevo Curso
@@ -273,7 +273,7 @@ export const AdminCourses = () => {
           placeholder="Buscar por título o profesor..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-sm pl-10 pr-4 py-2.5 bg-slate-800 border-none rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className="w-full max-w-sm pl-10 pr-4 py-2.5 bg-slate-800 border-none rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
         />
       </div>
 
@@ -362,7 +362,7 @@ export const AdminCourses = () => {
                         </button>
                         <button
                           onClick={() => openModal(course)}
-                          className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all border-none bg-transparent cursor-pointer"
+                          className="p-2 text-slate-400 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-all border-none bg-transparent cursor-pointer"
                           title="Editar"
                         >
                           <Pencil size={15} />
@@ -449,25 +449,25 @@ export const AdminCourses = () => {
             <form onSubmit={handleSave} className="space-y-4">
               <div>
                 <label className="block text-slate-300 text-xs font-semibold mb-1">Título *</label>
-                <input type="text" placeholder="Nombre del curso" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-500" />
+                <input type="text" placeholder="Nombre del curso" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500 placeholder-slate-500" />
               </div>
 
               <div>
                 <label className="block text-slate-300 text-xs font-semibold mb-1">Descripción</label>
-                <textarea rows="3" placeholder="Descripción detallada del curso..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500 resize-none placeholder-slate-500" />
+                <textarea rows="3" placeholder="Descripción detallada del curso..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500 resize-none placeholder-slate-500" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 text-xs font-semibold mb-1">Profesor *</label>
-                  <select value={formData.professor_id} onChange={e => setFormData({ ...formData, professor_id: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500">
+                  <select value={formData.professor_id} onChange={e => setFormData({ ...formData, professor_id: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500">
                     <option value="">— Sin asignar —</option>
                     {professors.map(prof => <option key={prof.id} value={prof.id}>{prof.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-slate-300 text-xs font-semibold mb-1">Categoría *</label>
-                  <select value={formData.category_id} onChange={e => setFormData({ ...formData, category_id: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500">
+                  <select value={formData.category_id} onChange={e => setFormData({ ...formData, category_id: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500">
                     <option value="">— Seleccionar —</option>
                     {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                   </select>
@@ -477,22 +477,22 @@ export const AdminCourses = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 text-xs font-semibold mb-1">Precio (USD) *</label>
-                  <input type="number" step="0.01" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500" />
+                  <input type="number" step="0.01" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500" />
                 </div>
                 <div>
                   <label className="block text-slate-300 text-xs font-semibold mb-1">Capacidad *</label>
-                  <input type="number" value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500" />
+                  <input type="number" value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 text-xs font-semibold mb-1">Fecha inicio *</label>
-                  <input type="date" value={formData.start_date} onChange={e => setFormData({ ...formData, start_date: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500" />
+                  <input type="date" value={formData.start_date} onChange={e => setFormData({ ...formData, start_date: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500" />
                 </div>
                 <div>
                   <label className="block text-slate-300 text-xs font-semibold mb-1">Fecha fin *</label>
-                  <input type="date" value={formData.end_date} onChange={e => setFormData({ ...formData, end_date: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500" />
+                  <input type="date" value={formData.end_date} onChange={e => setFormData({ ...formData, end_date: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500" />
                 </div>
               </div>
 
@@ -504,7 +504,7 @@ export const AdminCourses = () => {
                       type="button"
                       key={day}
                       onClick={() => toggleDay(day)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-medium border-none cursor-pointer transition-colors ${formData.days_of_week?.includes(day) ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-white'}`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium border-none cursor-pointer transition-colors ${formData.days_of_week?.includes(day) ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-white'}`}
                     >
                       {day}
                     </button>
@@ -515,11 +515,11 @@ export const AdminCourses = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-300 text-xs font-semibold mb-1">Hora inicio</label>
-                  <input type="time" value={formData.start_time} onChange={e => setFormData({ ...formData, start_time: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500" />
+                  <input type="time" value={formData.start_time} onChange={e => setFormData({ ...formData, start_time: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500" />
                 </div>
                 <div>
                   <label className="block text-slate-300 text-xs font-semibold mb-1">Hora fin</label>
-                  <input type="time" value={formData.end_time} onChange={e => setFormData({ ...formData, end_time: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500" />
+                  <input type="time" value={formData.end_time} onChange={e => setFormData({ ...formData, end_time: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500" />
                 </div>
               </div>
 
@@ -528,7 +528,7 @@ export const AdminCourses = () => {
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, status: formData.status === 'published' ? 'draft' : 'published' })}
-                  className={`w-11 h-6 rounded-full relative transition-colors disabled:opacity-50 border-none cursor-pointer p-0 ${formData.status === 'published' ? 'bg-indigo-600' : 'bg-slate-600'}`}
+                  className={`w-11 h-6 rounded-full relative transition-colors disabled:opacity-50 border-none cursor-pointer p-0 ${formData.status === 'published' ? 'bg-green-600' : 'bg-slate-600'}`}
                 >
                   <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${formData.status === 'published' ? 'left-[22px]' : 'left-0.5'}`} />
                 </button>
@@ -543,7 +543,7 @@ export const AdminCourses = () => {
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 rounded-xl transition-all border-none cursor-pointer">
                   Cancelar
                 </button>
-                <button type="submit" disabled={isSaving} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all disabled:opacity-50 border-none cursor-pointer">
+                <button type="submit" disabled={isSaving} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-500 rounded-xl transition-all disabled:opacity-50 border-none cursor-pointer">
                   {isSaving ? 'Guardando...' : (selectedCourse ? 'Guardar Cambios' : 'Crear Curso')}
                 </button>
               </div>

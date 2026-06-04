@@ -48,13 +48,13 @@
 }
 
 .auth-wrapper a:hover {
-  color: #4a3aff;
+  color: #16a34a;
 }
 
 .auth-btn {
   border-radius: 25px;
-  border: 1px solid #4a3aff;
-  background-color: #4a3aff;
+  border: 1px solid #16a34a;
+  background-color: #16a34a;
   color: #FFFFFF;
   font-size: 12px;
   font-weight: bold;
@@ -111,7 +111,7 @@
 
 .auth-wrapper input:focus {
   background-color: #e2e8f0;
-  box-shadow: 0 0 0 2px rgba(74, 58, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
 }
 
 .auth-container {
@@ -185,8 +185,8 @@
 }
 
 .overlay {
-  background: #4a3aff;
-  background: linear-gradient(135deg, #4a3aff 0%, #6d6cf5 100%);
+  background: #16a34a;
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
   background-repeat: no-repeat;
   background-size: cover;
   background-position: 0 0;
@@ -261,5 +261,5 @@
 .social-container a:hover {
   background-color: #f1f5f9;
   border-color: #cbd5e1;
-  color: #4a3aff;
+  color: #16a34a;
 }

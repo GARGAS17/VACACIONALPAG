@@ -173,7 +173,7 @@ export const AdminProfessors = () => {
         </div>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-900/30 border-none cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-green-900/30 border-none cursor-pointer"
         >
           <Plus size={16} />
           Nuevo Profesor
@@ -188,7 +188,7 @@ export const AdminProfessors = () => {
           placeholder="Buscar por nombre o email..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="w-full max-w-sm pl-10 pr-4 py-2.5 bg-slate-800 border-none rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className="w-full max-w-sm pl-10 pr-4 py-2.5 bg-slate-800 border-none rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
         />
       </div>
 
@@ -246,7 +246,7 @@ export const AdminProfessors = () => {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => openModal(prof)}
-                        className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all border-none bg-transparent cursor-pointer"
+                        className="p-2 text-slate-400 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-all border-none bg-transparent cursor-pointer"
                         title="Editar"
                       >
                         <Pencil size={15} />
@@ -358,17 +358,17 @@ export const AdminProfessors = () => {
             <form onSubmit={handleSave} className="space-y-4">
               <div>
                 <label className="block text-slate-300 text-xs font-semibold mb-1">Nombre *</label>
-                <input type="text" placeholder="Ej: Dr. Ana García" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-500" />
+                <input type="text" placeholder="Ej: Dr. Ana García" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500 placeholder-slate-500" />
               </div>
               
               <div>
                 <label className="block text-slate-300 text-xs font-semibold mb-1">Email *</label>
-                <input type="email" placeholder="profesor@universidad.edu.co" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-500" />
+                <input type="email" placeholder="profesor@universidad.edu.co" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500 placeholder-slate-500" />
               </div>
 
               <div>
                 <label className="block text-slate-300 text-xs font-semibold mb-1">Biografía</label>
-                <textarea rows="3" placeholder="Descripción profesional del profesor..." value={formData.bio} onChange={e => setFormData({ ...formData, bio: e.target.value })} className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-indigo-500 resize-none placeholder-slate-500" />
+                <textarea rows="3" placeholder="Descripción profesional del profesor..." value={formData.bio} onChange={e => setFormData({ ...formData, bio: e.target.value })} className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500 resize-none placeholder-slate-500" />
               </div>
 
               {/* Toggle Switch */}
@@ -388,7 +388,7 @@ export const AdminProfessors = () => {
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 rounded-xl transition-all border-none cursor-pointer">
                   Cancelar
                 </button>
-                <button type="submit" disabled={isSaving} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all disabled:opacity-50 border-none cursor-pointer">
+                <button type="submit" disabled={isSaving} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-500 rounded-xl transition-all disabled:opacity-50 border-none cursor-pointer">
                   {isSaving ? 'Guardando...' : (selectedProfessor ? 'Guardar Cambios' : 'Crear Profesor')}
                 </button>
               </div>

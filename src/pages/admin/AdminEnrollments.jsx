@@ -72,8 +72,8 @@ export const AdminEnrollments = () => {
             </span>
           </p>
         </div>
-        <div className="w-10 h-10 bg-indigo-600/20 rounded-xl flex items-center justify-center">
-          <ClipboardList size={20} className="text-indigo-400" />
+        <div className="w-10 h-10 bg-green-600/20 rounded-xl flex items-center justify-center">
+          <ClipboardList size={20} className="text-green-400" />
         </div>
       </div>
 
@@ -85,7 +85,7 @@ export const AdminEnrollments = () => {
           placeholder="Buscar por estudiante o curso..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-sm pl-10 pr-4 py-2.5 bg-slate-800 border-none rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className="w-full max-w-sm pl-10 pr-4 py-2.5 bg-slate-800 border-none rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
         />
       </div>
 

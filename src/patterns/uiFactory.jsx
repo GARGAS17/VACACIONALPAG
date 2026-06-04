@@ -43,7 +43,7 @@ class StudentUIFactory extends UIFactory {
     // Si es administrador, le agregamos un grupo especial con acceso admin
     if (this.profile?.role === 'admin') {
       const adminGroup = new MenuGroup('Opciones Root', Shield);
-      adminGroup.add(new MenuItem('Vista Admin 👑', LayoutDashboard, '/admin'));
+      adminGroup.add(new MenuItem('Vista Admin', LayoutDashboard, '/admin'));
       rootMenu.add(adminGroup);
     }
 

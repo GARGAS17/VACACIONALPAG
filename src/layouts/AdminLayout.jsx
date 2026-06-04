@@ -38,7 +38,7 @@ export const AdminLayout = () => {
         {/* Logo */}
         <div className="p-6 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-purple-600 flex items-center justify-center shadow-lg">
               <GraduationCap size={18} className="text-white" />
             </div>
             <div>
@@ -74,7 +74,7 @@ export const AdminLayout = () => {
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group no-underline ${
                         isActive
-                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/30'
+                          ? 'bg-green-600 text-white shadow-lg shadow-green-900/30'
                           : 'text-slate-400 hover:text-white hover:bg-slate-800'
                       }`
                     }
@@ -83,7 +83,7 @@ export const AdminLayout = () => {
                       <>
                         {Icon && <Icon size={18} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-white'} />}
                         <span className="flex-1">{node.label}</span>
-                        {isActive && <ChevronRight size={14} className="text-indigo-300" />}
+                        {isActive && <ChevronRight size={14} className="text-green-300" />}
                       </>
                     )}
                   </NavLink>

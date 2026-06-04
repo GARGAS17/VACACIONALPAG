@@ -74,14 +74,14 @@ export const AdminDashboard = () => {
           <select 
             value={exportFormat} 
             onChange={(e) => setExportFormat(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-slate-300 text-sm rounded-xl px-3 py-2 outline-none focus:border-indigo-500 cursor-pointer"
+            className="bg-slate-800 border border-slate-700 text-slate-300 text-sm rounded-xl px-3 py-2 outline-none focus:border-green-500 cursor-pointer"
           >
             <option value="csv">Formato CSV</option>
             <option value="json">Formato JSON</option>
           </select>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors w-max cursor-pointer border-none"
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors w-max cursor-pointer border-none"
           >
             <Download size={15} />
             Exportar Reporte
@@ -101,7 +101,7 @@ export const AdminDashboard = () => {
           label="Total de Inscripciones"
           value={String(metrics?.totalEnrollments ?? 0)}
           icon={Users}
-          color="bg-blue-600"
+          color="bg-green-600"
         />
         <StatCard
           label="Ocupación Total"
@@ -129,7 +129,7 @@ export const AdminDashboard = () => {
           value="↑ Activo"
           sub="Sistema operando con normalidad"
           icon={TrendingUp}
-          color="bg-indigo-600"
+          color="bg-green-600"
         />
       </div>
     </div>

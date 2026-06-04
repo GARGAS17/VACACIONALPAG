@@ -21,19 +21,19 @@ export default function HelpView() {
       <div className="grid grid-cols-3 gap-6 mb-8">
         {/* Chat box */}
         <div className="bg-white border border-slate-100 rounded-3xl p-6 text-center shadow-sm hover:shadow-md transition-all">
-          <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 mx-auto mb-4">
+          <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 mx-auto mb-4">
             <MessageSquare size={28} />
           </div>
           <h3 className="text-slate-800 font-bold text-sm mb-1">Chatea con Soporte</h3>
           <p className="text-slate-400 text-xs mb-4">Nuestro equipo está listo para ayudarte en tiempo real</p>
-          <button className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold border-none cursor-pointer transition-colors shadow">
+          <button className="px-5 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-semibold border-none cursor-pointer transition-colors shadow">
             Iniciar Chat
           </button>
         </div>
 
         {/* FAQs box */}
         <div className="bg-white border border-slate-100 rounded-3xl p-6 text-center shadow-sm hover:shadow-md transition-all">
-          <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 mx-auto mb-4">
+          <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 mx-auto mb-4">
             <FileText size={28} />
           </div>
           <h3 className="text-slate-800 font-bold text-sm mb-1">Preguntas Frecuentes</h3>
@@ -45,7 +45,7 @@ export default function HelpView() {
 
         {/* Tickets box */}
         <div className="bg-white border border-slate-100 rounded-3xl p-6 text-center shadow-sm hover:shadow-md transition-all">
-          <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 mx-auto mb-4">
+          <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 mx-auto mb-4">
             <Ticket size={28} />
           </div>
           <h3 className="text-slate-800 font-bold text-sm mb-1">Crear un Ticket</h3>
@@ -60,7 +60,7 @@ export default function HelpView() {
         {/* Preguntas Más Populares (Accordion) */}
         <div>
           <div className="flex items-center gap-1.5 text-slate-800 mb-4 text-sm font-bold">
-            <HelpCircle size={18} className="text-indigo-500" /> Preguntas más populares
+            <HelpCircle size={18} className="text-green-500" /> Preguntas más populares
           </div>
           <div className="space-y-2">
             {popularQuestions.map((qa, index) => {

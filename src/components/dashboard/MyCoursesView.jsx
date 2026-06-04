@@ -59,7 +59,7 @@ export default function MyCoursesView({ onExplore }) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-50 flex items-center justify-center rounded-xl text-indigo-500">
+          <div className="w-10 h-10 bg-green-50 flex items-center justify-center rounded-xl text-green-500">
             <GraduationCap size={22} />
           </div>
           <div>
@@ -69,7 +69,7 @@ export default function MyCoursesView({ onExplore }) {
         </div>
         <button 
           onClick={onExplore}
-          className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold border-none cursor-pointer shadow transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-semibold border-none cursor-pointer shadow transition-colors"
         >
           Explorar más cursos
         </button>
@@ -82,7 +82,7 @@ export default function MyCoursesView({ onExplore }) {
           {/* Aggregate Cards */}
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="bg-white border border-slate-100 rounded-2xl p-5 text-center shadow-sm">
-              <p className="text-2xl font-bold text-indigo-600 m-0">{totalCursos}</p>
+              <p className="text-2xl font-bold text-green-600 m-0">{totalCursos}</p>
               <p className="text-slate-400 text-xs mt-1 m-0">Cursos inscritos</p>
             </div>
             <div className="bg-white border border-slate-100 rounded-2xl p-5 text-center shadow-sm">
@@ -105,7 +105,7 @@ export default function MyCoursesView({ onExplore }) {
               <p className="text-slate-400 text-xs mb-5">Explora el catálogo y encuentra el curso perfecto para ti</p>
               <button 
                 onClick={onExplore}
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold border-none cursor-pointer transition-colors shadow"
+                className="px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-semibold border-none cursor-pointer transition-colors shadow"
               >
                 Explorar cursos →
               </button>
@@ -130,7 +130,7 @@ export default function MyCoursesView({ onExplore }) {
                     <div>
                       <h3 className="text-slate-800 font-bold text-sm mb-1 pr-16">{course?.title}</h3>
                       <div className="flex items-center gap-1.5 mb-3">
-                        <div className="w-5 h-5 bg-indigo-50 border border-white rounded-full flex items-center justify-center text-indigo-500 font-bold text-[10px]">
+                        <div className="w-5 h-5 bg-green-50 border border-white rounded-full flex items-center justify-center text-green-500 font-bold text-[10px]">
                           {initial}
                         </div>
                         <span className="text-slate-400 text-[11px]">{professorName}</span>
@@ -194,7 +194,7 @@ export default function MyCoursesView({ onExplore }) {
                   </div>
 
                   <div className="flex items-center gap-2 border-t border-slate-100 pt-4">
-                    <div className="w-10 h-10 bg-indigo-50 flex items-center justify-center rounded-xl text-indigo-500">
+                    <div className="w-10 h-10 bg-green-50 flex items-center justify-center rounded-xl text-green-500">
                       <GraduationCap size={20} />
                     </div>
                     <div>
