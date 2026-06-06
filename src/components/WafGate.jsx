@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../api/supabase';
+import { checkWafStatus } from '../services/wafService';
 
 export default function WafGate({ children }) {
   const [isBlocked, setIsBlocked] = useState(false);
@@ -11,33 +12,12 @@ export default function WafGate({ children }) {
   useEffect(() => {
     let isCheckingNow = false;
 
-    const checkWafStatus = async () => {
+    const runWafCheck = async () => {
       if (isCheckingNow) return;
       isCheckingNow = true;
 
       try {
-        const { error: wafError } = await supabase.functions.invoke('waf-guard', {
-          method: 'GET'
-        });
-
-        let isRealBlock = false;
-        if (wafError) {
-          if (wafError.context && typeof wafError.context.text === 'function') {
-            try {
-              const bodyText = await wafError.context.text();
-              const parsed = JSON.parse(bodyText);
-              if (parsed?.code === 'ERROR_IP_BLOCKED') {
-                isRealBlock = true;
-              }
-            } catch (e) {}
-          } else if (wafError.message && wafError.message.includes('403')) {
-            isRealBlock = true;
-          }
-          
-          if (wafError.status === 403) {
-             isRealBlock = true;
-          }
-        }
+        const isRealBlock = await checkWafStatus();
 
         if (isRealBlock) {
           setIsBlocked(true);
@@ -51,8 +31,6 @@ export default function WafGate({ children }) {
             navigate('/', { replace: true });
           }
         }
-      } catch (error) {
-        console.warn('WAF check bypassed due to network error');
       } finally {
         isCheckingNow = false;
         setIsChecking(false);
@@ -60,20 +38,20 @@ export default function WafGate({ children }) {
     };
 
     // 1. Chequeo inicial y en cambios de ruta
-    checkWafStatus();
+    runWafCheck();
 
     // 2. Chequeo automático cuando el usuario regresa a la pestaña
-    const handleFocus = () => checkWafStatus();
+    const handleFocus = () => runWafCheck();
     window.addEventListener('focus', handleFocus);
     window.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') checkWafStatus();
+      if (document.visibilityState === 'visible') runWafCheck();
     });
 
     // 3. Polling de rescate (cada 5 segundos) SOLO si está en la pantalla de bloqueo
     let intervalId;
     if (location.pathname === '/bloqueado') {
       intervalId = setInterval(() => {
-        checkWafStatus();
+        runWafCheck();
       }, 5000);
     }
 
