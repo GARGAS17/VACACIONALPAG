@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@supabase/supabase-js';
 import { 
   Home, BookOpen, User, CreditCard, GraduationCap, Settings, 
@@ -6,12 +7,14 @@ import {
   Calendar, Clock, CheckCircle2, ChevronRight, X
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
-import { useNotificationStore } from '../services/useNotificationStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { PaymentFactory } from '../services/paymentFactory';
-import { UIFactoryProvider } from '../layouts/uiFactory';
+import { NotificationFactory } from '../services/notificationBridge';
+import { AuditEnrollmentProxy } from '../services/proxies';
+import { PriceCalculatorFactory } from '../patterns/PriceDecorator';
+import { UIFactoryProvider } from '../patterns/uiFactory';
 import { CourseQueryBuilder } from '../services/courseQueryBuilder';
+import { EntityFlyweightFactory } from '../patterns/flyweight/EntityFlyweightFactory';
 
 import ProfileView from '../components/dashboard/ProfileView';
 import PaymentsView from '../components/dashboard/PaymentsView';
@@ -35,7 +38,6 @@ export default function Catalog() {
   const [paymentMethod, setPaymentMethod] = useState('stripe');
 
   const { signOut, profile, user } = useAuthStore();
-  const { addToast } = useNotificationStore();
   const navigate = useNavigate();
   const hasShownWelcome = useRef(false);
 
@@ -43,9 +45,18 @@ export default function Catalog() {
   const { data: courses = [], isLoading: loadingCourses } = useQuery({
     queryKey: ['courses'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('courses').select('*, categories(name), professors(name)');
+      // 1. Añadimos el 'id' a la proyección para usarlo como key segura
+      const { data, error } = await supabase.from('courses').select('*, categories(id, name), professors(id, name)');
       if (error) throw error;
-      return data || [];
+      
+      // 2. 🍃 PATRÓN FLYWEIGHT: Normalizamos y compartimos memoria
+      const optimizedCourses = (data || []).map(course => ({
+        ...course,
+        professors: EntityFlyweightFactory.getProfessor(course.professors),
+        categories: EntityFlyweightFactory.getCategory(course.categories)
+      }));
+      
+      return optimizedCourses;
     }
   });
 
@@ -56,7 +67,7 @@ export default function Catalog() {
         .from('enrollments')
         .select('course_id')
         .eq('user_id', user.id)
-        .in('payment_status', ['paid', 'completed']); // Solo ocultar si ya está pagado/completado
+        .in('payment_status', ['paid', 'completed']);
       
       if (error) throw error;
       return data?.map(e => e.course_id) || [];
@@ -66,31 +77,37 @@ export default function Catalog() {
 
   useEffect(() => {
     if (!hasShownWelcome.current) {
-      addToast({ type: 'success', message: '¡Bienvenido de nuevo!' });
+      // 🌉 PATRÓN BRIDGE: Petición UI "Standard" usando "Toast"
+      const welcomeNotif = NotificationFactory.create('standard', 'toast');
+      welcomeNotif.notify('¡Bienvenido de nuevo al Aula Virtual!', 'success');
       hasShownWelcome.current = true;
     }
-  }, [addToast]);
+  }, []);
 
+  // === 🕵️ PATRÓN PROXY + FACADE (Auditoría + Inscripciones) ===
   const handleEnroll = async (courseId) => {
     setEnrolling(true);
-    try {
-      const processor = PaymentFactory.getProcessor(paymentMethod);
-      const { url } = await processor.checkout({ courseId, userId: user?.id });
-      if (url) {
-        if (url.startsWith('http')) window.location.assign(url);
-        else navigate(url);
+    
+    // El Proxy envuelve a la Fachada. Loguea silenciosamente la transacción.
+    const result = await AuditEnrollmentProxy.processEnrollment(courseId, user?.id, paymentMethod);
+    
+    if (result.success && result.url) {
+      if (result.isExternal) {
+        window.location.assign(result.url);
+      } else {
+        navigate(result.url);
       }
-    } catch (error) {
-      alert("Error al iniciar inscripción: " + error.message);
-    } finally {
-      setEnrolling(false);
     }
+    
+    setEnrolling(false);
   };
 
   const handleSignOut = async () => {
     await signOut();
     sessionStorage.clear(); // Limpia role_selected y role_mode de un golpe
-    addToast({ type: 'info', message: 'Sesión cerrada correctamente' });
+    // 🌉 PATRÓN BRIDGE: Cierre de sesión
+    const signoutNotif = NotificationFactory.create('standard', 'toast');
+    signoutNotif.notify('Sesión cerrada correctamente', 'info');
     navigate('/auth');
   };
 
@@ -109,19 +126,19 @@ export default function Catalog() {
     return (
       <div className="navigation">
         <ul>
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const Icon = item.icon;
             const linkName = item.to.split('/').pop();
             const isActive = currentTab === linkName;
 
             return (
               <li 
-                key={item.to} 
+                key={item.to || index} 
                 className={isActive ? 'active' : ''} 
                 onClick={() => navigate(item.to)}
               >
                 <a href="#">
-                  <span className="icon"><Icon size={24} /></span>
+                  <span className="icon">{Icon && <Icon size={24} />}</span>
                   <span className="title">{item.label}</span>
                 </a>
               </li>
@@ -129,7 +146,7 @@ export default function Catalog() {
           })}
           
           <li style={{ marginTop: 'auto', marginBottom: '20px' }}>
-            <button onClick={handleSignOut}>
+            <button onClick={handleSignOut} style={{ width: '100%' }}>
               <span className="icon"><LogOut size={24} /></span>
               <span className="title font-bold">Cerrar Sesión</span>
             </button>
@@ -210,7 +227,21 @@ export default function Catalog() {
                     <div className="detail-item"><Users size={14} /> {course.enrolled_count}/{course.capacity} inscritos</div>
                   </div>
                   <div className="course-footer">
-                    <div className="course-price">$ US$ {course.price}</div>
+                    {/* 🎁 PATRÓN DECORATOR: Cálculo dinámico de precio */}
+                    {(() => {
+                      const finalPriceObj = PriceCalculatorFactory.calculateFinalPrice(course.price, profile, false);
+                      const finalPrice = finalPriceObj.getPrice();
+                      return (
+                        <div className="course-price">
+                           {course.price > 0 && finalPrice < course.price && (
+                             <span style={{ textDecoration: 'line-through', fontSize: '0.8rem', color: '#94a3b8', marginRight: '8px' }}>
+                               ${course.price.toFixed(2)}
+                             </span>
+                           )}
+                           $ US$ {finalPrice.toFixed(2)}
+                        </div>
+                      );
+                    })()}
                     <span className="btn-details">
                       Ver detalle <ChevronRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginTop: '-2px' }}/>
                     </span>
@@ -240,20 +271,41 @@ export default function Catalog() {
                   <div className="detail-item"><Calendar size={16} /> Duración total del periodo vacacional</div>
                   <div className="detail-item"><Users size={16} /> {selectedCourse.enrolled_count} inscritos de {selectedCourse.capacity} cupos totales</div>
                 </div>
-                <div className="course-price" style={{ fontSize: '1.25rem' }}>$ US$ {selectedCourse.price}</div>
+                
+                {/* 🎁 PATRÓN DECORATOR: Desglose de Precios */}
+                {(() => {
+                  const finalPriceObj = PriceCalculatorFactory.calculateFinalPrice(selectedCourse.price, profile, false);
+                  const breakdown = finalPriceObj.getBreakdown();
+                  
+                  return (
+                    <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#64748b', marginBottom: '8px', fontWeight: 'bold' }}>Resumen de Pago</h4>
+                      {breakdown.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '4px', color: item.amount < 0 ? '#10b981' : '#334155' }}>
+                          <span>{item.reason}</span>
+                          <span>{item.amount < 0 ? '-' : ''}$ {Math.abs(item.amount).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #cbd5e1', fontWeight: 'bold', fontSize: '1.2rem', color: '#0f172a' }}>
+                        <span>Total a Pagar</span>
+                        <span>$ US$ {finalPriceObj.getPrice().toFixed(2)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               <div className="mb-4">
                 <p className="text-slate-700 font-bold mb-2 text-xs">Selecciona método de pago:</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={() => setPaymentMethod('stripe')} 
-                    className={`p-3 rounded-xl border text-center text-xs font-bold cursor-pointer transition-colors ${paymentMethod === 'stripe' ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
+                    className={`p-3 rounded-xl border text-center text-xs font-bold cursor-pointer transition-colors ${paymentMethod === 'stripe' ? 'border-green-600 bg-green-50/50 text-green-700' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
                   >
                     Tarjeta (Stripe)
                   </button>
                   <button 
                     onClick={() => setPaymentMethod('manual')} 
-                    className={`p-3 rounded-xl border text-center text-xs font-bold cursor-pointer transition-colors ${paymentMethod === 'manual' ? 'border-indigo-600 bg-indigo-50/50 text-indigo-700' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
+                    className={`p-3 rounded-xl border text-center text-xs font-bold cursor-pointer transition-colors ${paymentMethod === 'manual' ? 'border-green-600 bg-green-50/50 text-green-700' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
                   >
                     Transferencia / Efectivo
                   </button>

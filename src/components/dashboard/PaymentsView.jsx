@@ -152,21 +152,21 @@ export default function PaymentsView() {
 
           {/* Método de Pago Predeterminado */}
           {lastCardItem && lastCardItem.last_4_digits && lastCardItem.stripe_customer_id !== 'unknown' && lastCardItem.last_4_digits !== 'unknown' && (
-            <div className="p-5 bg-indigo-600 rounded-2xl flex items-center justify-between shadow-lg text-white">
+            <div className="p-5 bg-green-600 rounded-2xl flex items-center justify-between shadow-lg text-white">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <CreditCard size={24} className="text-white" />
                 </div>
                 <div>
                   <p className="text-sm font-bold m-0">Método de Pago Predeterminado</p>
-                  <p className="text-xs text-indigo-100 mt-0.5 m-0">Tarjeta terminada en •••• {lastCardItem.last_4_digits}</p>
-                  <p className="text-[11px] text-indigo-200 mt-0.5 m-0">Marca: {lastCardItem.payment_method || 'S/D'}</p>
+                  <p className="text-xs text-green-100 mt-0.5 m-0">Tarjeta terminada en •••• {lastCardItem.last_4_digits}</p>
+                  <p className="text-[11px] text-green-200 mt-0.5 m-0">Marca: {lastCardItem.payment_method || 'S/D'}</p>
                 </div>
               </div>
               <button 
                 onClick={handleChangeCard} 
                 disabled={isUpdatingCard}
-                className="px-5 py-2.5 bg-white hover:bg-slate-100 text-indigo-600 rounded-xl text-xs font-bold border-none cursor-pointer shadow-sm transition-colors disabled:opacity-50"
+                className="px-5 py-2.5 bg-white hover:bg-slate-100 text-green-600 rounded-xl text-xs font-bold border-none cursor-pointer shadow-sm transition-colors disabled:opacity-50"
               >
                 {isUpdatingCard ? 'Cargando...' : 'CAMBIAR TARJETA'}
               </button>

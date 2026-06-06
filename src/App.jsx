@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Auth from './pages/Auth';
 import Catalog from './pages/Catalog';
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
-import { AdminLayout } from './pages/admin/AdminLayout';
+import { AdminLayout } from './layouts/AdminLayout';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminCourses } from './pages/admin/AdminCourses';
 import { AdminProfessors } from './pages/admin/AdminProfessors';

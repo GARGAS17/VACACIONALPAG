@@ -1,69 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Facebook, Globe, Github, Linkedin } from 'lucide-react';
 import './Auth.css';
 import { supabase } from '../api/supabase';
 import { useNavigate } from 'react-router-dom';
-import { useNotificationStore } from '../services/useNotificationStore';
+import { useNotificationStore } from '../store/useNotificationStore';
+import { verifyWafRequest } from '../services/wafService';
 
 export default function Auth() {
   const [isRightPanelActive, setIsRightPanelActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { addToast } = useNotificationStore();
-  
+
   // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
 
+  // Verifica si el error proviene del WAF (IP bloqueada o SQLi detectado)
+  const isWafBlocked = (err) => {
+    return err?.status === 403 || err?.code === 'WAF_BLOCKED' ||
+      (typeof err?.message === 'string' && err.message.includes('WAF_BLOCKED'));
+  };
+
   const handleSignUp = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      const { error: wafError } = await supabase.functions.invoke('waf-guard', {
-        method: 'POST',
-        body: { email, password, name },
-        headers: { 'x-waf-endpoint': '/auth/signup' }
-      });
+    const emailTrimmed = email.trim().toLowerCase();
 
-      let isBlocked = false;
-      if (wafError) {
-        if (wafError.context && typeof wafError.context.text === 'function') {
-           try {
-             const jsonRaw = await wafError.context.text();
-             const json = JSON.parse(jsonRaw);
-             if (json?.code === 'ERROR_IP_BLOCKED') isBlocked = true;
-           } catch (e) {
-             if (wafError.message && wafError.message.includes('403')) isBlocked = true;
-           }
-        } else if (wafError.message && wafError.message.includes('403')) {
-           isBlocked = true;
-        }
-      }
-
-      if (isBlocked) {
-        addToast({ type: 'error', message: 'Bloqueo de seguridad: Carga maliciosa detectada.' });
-        setLoading(false);
-        navigate('/bloqueado', { replace: true });
-        return;
-      }
-    } catch (err) {
-      console.warn('WAF bypassed due to network error');
+    // ── FILTRO WAF ──
+    const isWafBlock = await verifyWafRequest('/auth/signup', { email: emailTrimmed, password, name: name.trim() });
+    if (isWafBlock) {
+      addToast({ type: 'error', message: 'Bloqueo de seguridad: Carga maliciosa detectada.' });
+      setLoading(false);
+      navigate('/bloqueado', { replace: true });
+      return;
     }
 
     const { error, data } = await supabase.auth.signUp({
-      email,
+      email: emailTrimmed,
       password,
       options: {
         data: {
-          full_name: name
+          full_name: name.trim()
         }
       }
     });
     setLoading(false);
     if (error) {
-      addToast({ type: 'error', message: error.message });
+      if (isWafBlocked(error)) {
+        addToast({ type: 'error', message: '🚫 Acceso denegado. Tu dirección IP ha sido bloqueada.' });
+      } else {
+        addToast({ type: 'error', message: error.message });
+      }
     } else {
       if (data?.session) {
         addToast({ type: 'success', message: 'Registro completado.' });
@@ -79,49 +69,31 @@ export default function Auth() {
   const handleSignIn = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const emailTrimmed = email.trim().toLowerCase();
 
-    try {
-      const { error: wafError } = await supabase.functions.invoke('waf-guard', {
-        method: 'POST',
-        body: { email, password },
-        headers: { 'x-waf-endpoint': '/auth/signin' }
-      });
-
-      let isBlocked = false;
-      if (wafError) {
-        if (wafError.context && typeof wafError.context.text === 'function') {
-           try {
-             const jsonRaw = await wafError.context.text();
-             const json = JSON.parse(jsonRaw);
-             if (json?.code === 'ERROR_IP_BLOCKED') isBlocked = true;
-           } catch (e) {
-             if (wafError.message && wafError.message.includes('403')) isBlocked = true;
-           }
-        } else if (wafError.message && wafError.message.includes('403')) {
-           isBlocked = true;
-        }
-      }
-
-      if (isBlocked) {
-        addToast({ type: 'error', message: 'Bloqueo de seguridad: Carga maliciosa detectada.' });
-        setLoading(false);
-        navigate('/bloqueado', { replace: true });
-        return;
-      }
-    } catch (err) {
-      console.warn('WAF bypassed due to network error');
+    // ── FILTRO WAF ──
+    const isWafBlock = await verifyWafRequest('/auth/signin', { email: emailTrimmed, password });
+    if (isWafBlock) {
+      addToast({ type: 'error', message: 'Bloqueo de seguridad: Carga maliciosa detectada.' });
+      setLoading(false);
+      navigate('/bloqueado', { replace: true });
+      return;
     }
 
     const { error, data } = await supabase.auth.signInWithPassword({
-      email,
+      email: emailTrimmed,
       password,
     });
     setLoading(false);
     if (error) {
-      const msg = error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')
-         ? 'Por favor, confirma tu correo electrónico antes de iniciar sesión.'
-         : 'Credenciales inválidas';
-      addToast({ type: 'error', message: msg });
+      if (isWafBlocked(error)) {
+        addToast({ type: 'error', message: '🚫 Acceso denegado. Tu dirección IP ha sido bloqueada.' });
+      } else {
+        const msg = error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')
+           ? 'Por favor, confirma tu correo electrónico antes de iniciar sesión.'
+           : 'Credenciales inválidas';
+        addToast({ type: 'error', message: msg });
+      }
     } else if (data?.session) {
       navigate('/');
     }
@@ -144,7 +116,7 @@ export default function Auth() {
             <span>o usa tu correo para registrarte</span>
             <input type="text" placeholder="Nombre" value={name} onChange={(e)=>setName(e.target.value)} required />
             <input type="email" placeholder="Correo" value={email} onChange={(e)=>setEmail(e.target.value)} required />
-            <input type="password" placeholder="Contraseña" value={password} onChange={(e)=>setPassword(e.target.value)} minLength={6} required />
+            <input type="password" placeholder="Contraseña" value={password} onChange={(e)=>setPassword(e.target.value)} minLength={6} autoComplete="new-password" required />
             <button type="submit" disabled={loading} className="auth-btn">
               {loading ? 'CARGANDO...' : 'REGISTRARSE'}
             </button>
@@ -163,7 +135,7 @@ export default function Auth() {
             </div>
             <span>o usa tu cuenta con correo y contraseña</span>
             <input type="email" placeholder="Correo" value={email} onChange={(e)=>setEmail(e.target.value)} required />
-            <input type="password" placeholder="Contraseña" value={password} onChange={(e)=>setPassword(e.target.value)} required />
+            <input type="password" placeholder="Contraseña" value={password} onChange={(e)=>setPassword(e.target.value)} autoComplete="current-password" required />
             <a href="#">¿Olvidaste tu contraseña?</a>
             <button type="submit" disabled={loading} className="auth-btn">
                {loading ? 'CARGANDO...' : 'INGRESAR'}

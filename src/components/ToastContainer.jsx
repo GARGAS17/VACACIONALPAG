@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNotificationStore } from '../services/useNotificationStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 import { CheckCircle2, Info, XCircle, X } from 'lucide-react';
 import './ToastContainer.css';
 

@@ -49,7 +49,7 @@ export default function SettingsView() {
         {/* Notificaciones */}
         <div className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-11 h-11 bg-indigo-50/50 rounded-xl flex items-center justify-center text-indigo-500">
+            <div className="w-11 h-11 bg-green-50/50 rounded-xl flex items-center justify-center text-green-500">
               <Bell size={22} />
             </div>
             <div>
@@ -59,7 +59,7 @@ export default function SettingsView() {
           </div>
           <button 
             onClick={() => setNotif(!notif)} 
-            className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer border-none p-0 ${notif ? 'bg-indigo-600' : 'bg-slate-200'}`}
+            className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer border-none p-0 ${notif ? 'bg-green-600' : 'bg-slate-200'}`}
           >
             <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${notif ? 'left-[22px]' : 'left-0.5'}`} />
           </button>
@@ -68,7 +68,7 @@ export default function SettingsView() {
         {/* Privacidad - Cambiar Contraseña */}
         <div className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-11 h-11 bg-indigo-50/50 rounded-xl flex items-center justify-center text-indigo-500">
+            <div className="w-11 h-11 bg-green-50/50 rounded-xl flex items-center justify-center text-green-500">
               <Shield size={22} />
             </div>
             <div>
@@ -87,7 +87,7 @@ export default function SettingsView() {
         {/* Idioma */}
         <div className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-11 h-11 bg-indigo-50/50 rounded-xl flex items-center justify-center text-indigo-500">
+            <div className="w-11 h-11 bg-green-50/50 rounded-xl flex items-center justify-center text-green-500">
               <Globe size={22} />
             </div>
             <div>
@@ -106,7 +106,7 @@ export default function SettingsView() {
         {/* Apariencia */}
         <div className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-11 h-11 bg-indigo-50/50 rounded-xl flex items-center justify-center text-indigo-500">
+            <div className="w-11 h-11 bg-green-50/50 rounded-xl flex items-center justify-center text-green-500">
               <Moon size={22} />
             </div>
             <div>
@@ -116,7 +116,7 @@ export default function SettingsView() {
           </div>
           <button 
             onClick={toggleDarkMode} 
-            className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer border-none p-0 ${dark ? 'bg-indigo-600' : 'bg-slate-200'}`}
+            className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer border-none p-0 ${dark ? 'bg-green-600' : 'bg-slate-200'}`}
           >
             <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${dark ? 'left-[22px]' : 'left-0.5'}`} />
           </button>
@@ -133,7 +133,7 @@ export default function SettingsView() {
             
             <div className="flex items-center gap-4 mt-2">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500">
+                <div className="w-11 h-11 bg-green-50 rounded-xl flex items-center justify-center text-green-500">
                   <Lock size={20} />
                 </div>
                 <div>
@@ -148,13 +148,14 @@ export default function SettingsView() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Nueva contraseña"
+                  autoComplete="new-password"
                   required
-                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none focus:border-indigo-500"
+                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none focus:border-green-500"
                 />
                 <button 
                   type="submit" 
                   disabled={isUpdatingPass}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold border-none cursor-pointer shadow transition-colors whitespace-nowrap"
+                  className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-semibold border-none cursor-pointer shadow transition-colors whitespace-nowrap"
                 >
                   {isUpdatingPass ? 'Guardando...' : 'Cambiar Contraseña'}
                 </button>
@@ -172,7 +173,7 @@ export default function SettingsView() {
               ✕
             </button>
             <div className="text-center mb-5">
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 mx-auto mb-2">
+              <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 mx-auto mb-2">
                 <Globe size={22} />
               </div>
               <h3 className="text-slate-800 font-bold text-sm mb-1 m-0">Idioma & Región</h3>
@@ -187,10 +188,10 @@ export default function SettingsView() {
                   <button 
                     key={code}
                     onClick={() => { setLanguage(code); alert('Idioma previsualizado cambiado a ' + code); }}
-                    className={`w-full p-4 rounded-xl flex items-center justify-between border cursor-pointer transition-all ${isSelected ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
+                    className={`w-full p-4 rounded-xl flex items-center justify-between border cursor-pointer transition-all ${isSelected ? 'border-green-500 bg-green-50/30' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
                   >
-                    <span className={`text-xs font-semibold ${isSelected ? 'text-indigo-600' : 'text-slate-700'}`}>{l}</span>
-                    {isSelected && <Check size={16} className="text-indigo-600" />}
+                    <span className={`text-xs font-semibold ${isSelected ? 'text-green-600' : 'text-slate-700'}`}>{l}</span>
+                    {isSelected && <Check size={16} className="text-green-600" />}
                   </button>
                 );
               })}

@@ -36,11 +36,11 @@ PARTE 1: PREPARATIVOS (5 minutos)
 
 1.3 INSTALAR PAQUETES FALTANTES
    ```bash
-   npm install zod  # Para validación
-   npm install stripe  # Para Stripe en Edge Functions
+   # Las dependencias ya están listas en package.json:
+   # @tanstack/react-query, lucide-react, zustand, zod, etc.
    
    # Verificar que tengas todos:
-   npm list | grep -E "supabase|react-query|zustand|zod"
+   npm list | grep -E "supabase|react-query|zustand"
    ```
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -182,53 +182,17 @@ PARTE 4: ACTUALIZAR CÓDIGO FRONTEND (10 minutos)
    ✓ supabase/schema_v2_OPTIMIZADO.sql
    ✓ src/lib/validation.ts (esquemas Zod)
    ✓ src/services/enrollments.service.ts
-   ✓ src/api/types.ts (tipos completos)
-   ✓ ARQUITECTURA_COMPLETA.md (documentación)
-   ✓ SETUP_PASO_A_PASO.md (este archivo)
+   ✓ src/services/useNotificationStore.ts
+   ✓ ARQUITECTURA_COMPLETA.md / PATRONES.md
+   ✓ Setup e integraciones reactivas
 
-4.2 ARCHIVOS A CREAR MANUALMENTE (Opcionales para MVP)
-   
-   Crear: src/store/useNotificationStore.ts
-   ```typescript
-   import { create } from 'zustand'
-   
-   export interface Toast {
-     id: string
-     type: 'success' | 'error' | 'info'
-     message: string
-     duration?: number
-   }
-   
-   interface NotificationState {
-     toasts: Toast[]
-     addToast: (toast: Omit<Toast, 'id'>) => void
-     removeToast: (id: string) => void
-   }
-   
-   export const useNotificationStore = create<NotificationState>((set) => ({
-     toasts: [],
-     addToast: (toast) =>
-       set((state) => ({
-         toasts: [
-           ...state.toasts,
-           { ...toast, id: Date.now().toString() },
-         ],
-       })),
-     removeToast: (id) =>
-       set((state) => ({
-         toasts: state.toasts.filter((t) => t.id !== id),
-       })),
-   }))
-   ```
-
-4.3 INSTALAR DEPENDENCIAS PENDIENTES
+4.2 INSTALAR DEPENDENCIAS PENDIENTES
    ```bash
    npm install
    npm run dev
    ```
-   
-   Abre http://localhost:5173 en navegador
-   ✓ Debería cargar sin errores
+   Abre http://localhost:5173 en navegador.
+   ✓ Debería cargar sin errores. Conservando la sesión del usuario.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PARTE 5: CREAR EDGE FUNCTIONS (15 minutos)
@@ -440,69 +404,43 @@ CHECKLIST FINAL
 ═══════════════════════════════════════════════════════════════════════════════
 
 SUPABASE:
- □ Proyecto creado
- □ API keys en .env.local
- □ Schema SQL ejecutado
- □ Tablas visibles en Table Editor
- □ RLS habilitado en 7 tablas
- □ Usuario de prueba creado
+ ☑ Proyecto creado
+ ☑ API keys en .env.local
+ ☑ Schema SQL ejecutado
+ ☑ Tablas visibles en Table Editor
+ ☑ RLS habilitado en 7 tablas
+ ☑ Usuario de prueba creado
 
 STRIPE:
- □ Cuenta creada
- □ Keys (pk_test y sk_test) obtenidas
- □ VITE_STRIPE_PUBLIC_KEY en .env.local
- □ sk_test disponible para Edge Functions
+ ☑ Cuenta creada
+ ☑ Keys (pk_test y sk_test) obtenidas
+ ☑ VITE_STRIPE_PUBLIC_KEY en .env.local
+ ☑ sk_test disponible para Edge Functions
 
 CÓDIGO:
- □ npm install completado
- □ npm run dev funciona (localhost:5173)
- □ tipos.ts actualizado
- □ validation.ts con Zod
- □ enrollments.service.ts creado
+ ☑ npm install completado
+ ☑ npm run dev funciona (localhost:5173)
+ ☑ tipos.ts / interfaces actualizadas
+ ☑ Cliente Supabase integrado
+ ☑ TanStack Query implementado (Caché Centralizada)
+
+ARQUITECTURA (PATRONES.md):
+ ☑ Factory Method dispuesto en Pagos
+ ☑ Abstract Factory dispuesto para Sidebar Roles
+ ☑ Builder dispuesto para Filtros de Cursos
+ ☑ Prototype dispuesto para Clonar Cursos
 
 EDGE FUNCTIONS:
- □ Supabase CLI instalado
- □ enroll function creada y deployed
- □ webhooks/stripe creada y deployed
- □ Secrets configurados en Supabase
+ ☑ Supabase CLI instalado
+ ☑ enroll function creada y deployed
+ ☑ webhooks/stripe creada y deployed
+ ☑ Secrets configurados en Supabase
 
 TESTING:
- □ Datos de prueba insertados
- □ Catálogo muestra cursos en /courses
- □ Modal de detalles se abre
- □ Consola sin errores de Supabase
-
-═══════════════════════════════════════════════════════════════════════════════
-🎉 PRÓXIMOS PASOS (DESPUÉS DE SETUP)
-═══════════════════════════════════════════════════════════════════════════════
-
-1. Implementar componentes:
-   □ Signup/Login forms
-   □ Course Catalog UI
-   □ Enrollment flow
-   □ Payment checkout
-
-2. Integrat React Query:
-   □ useQuery para courses
-   □ useMutation para enroll
-   □ useQuery para enrollments
-
-3. Mejorar UX:
-   □ Loading states
-   □ Error boundaries
-   □ Toast notifications
-   □ Skeletons
-
-4. Testing:
-   □ Unit tests (Zod schemas)
-   □ Integration tests
-   □ E2E tests (Playwright)
-
-5. Deploy:
-   □ Push a GitHub
-   □ Connect Vercel
-   □ Configure domain
-   □ Setup HTTPS
+ ☑ Datos de prueba insertados
+ ☑ Catálogo muestra cursos
+ ☑ Modales de detalles/Inscripciones funcionales
+ ☑ Consola sin errores (Stripe/Supabase)
 
 ═══════════════════════════════════════════════════════════════════════════════
 
