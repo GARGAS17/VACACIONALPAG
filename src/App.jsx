@@ -10,6 +10,8 @@ import { AdminProfessors } from './pages/admin/AdminProfessors';
 import { AdminEnrollments } from './pages/admin/AdminEnrollments';
 import { useAuthStore } from './store/useAuthStore';
 import { ToastContainer } from './components/ToastContainer';
+import WafGate from './components/WafGate';
+import Blocked from './pages/Blocked';
 import './App.css';
 
 export default function App() {
@@ -27,9 +29,11 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <ToastContainer />
-      <Routes>
-        <Route path="/auth" element={<Auth />} />
+      <WafGate>
+        <ToastContainer />
+        <Routes>
+          <Route path="/bloqueado" element={<Blocked />} />
+          <Route path="/auth" element={<Auth />} />
         
         {/* Rutas para todos los usuarios autenticados (Estudiantes y Admins) */}
         <Route element={<ProtectedRoute />}>
@@ -49,6 +53,7 @@ export default function App() {
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </WafGate>
     </BrowserRouter>
   );
 }

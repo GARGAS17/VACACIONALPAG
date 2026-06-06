@@ -19,6 +19,39 @@ export default function Auth() {
   const handleSignUp = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    try {
+      const { error: wafError } = await supabase.functions.invoke('waf-guard', {
+        method: 'POST',
+        body: { email, password, name },
+        headers: { 'x-waf-endpoint': '/auth/signup' }
+      });
+
+      let isBlocked = false;
+      if (wafError) {
+        if (wafError.context && typeof wafError.context.text === 'function') {
+           try {
+             const jsonRaw = await wafError.context.text();
+             const json = JSON.parse(jsonRaw);
+             if (json?.code === 'ERROR_IP_BLOCKED') isBlocked = true;
+           } catch (e) {
+             if (wafError.message && wafError.message.includes('403')) isBlocked = true;
+           }
+        } else if (wafError.message && wafError.message.includes('403')) {
+           isBlocked = true;
+        }
+      }
+
+      if (isBlocked) {
+        addToast({ type: 'error', message: 'Bloqueo de seguridad: Carga maliciosa detectada.' });
+        setLoading(false);
+        navigate('/bloqueado', { replace: true });
+        return;
+      }
+    } catch (err) {
+      console.warn('WAF bypassed due to network error');
+    }
+
     const { error, data } = await supabase.auth.signUp({
       email,
       password,
@@ -46,6 +79,39 @@ export default function Auth() {
   const handleSignIn = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    try {
+      const { error: wafError } = await supabase.functions.invoke('waf-guard', {
+        method: 'POST',
+        body: { email, password },
+        headers: { 'x-waf-endpoint': '/auth/signin' }
+      });
+
+      let isBlocked = false;
+      if (wafError) {
+        if (wafError.context && typeof wafError.context.text === 'function') {
+           try {
+             const jsonRaw = await wafError.context.text();
+             const json = JSON.parse(jsonRaw);
+             if (json?.code === 'ERROR_IP_BLOCKED') isBlocked = true;
+           } catch (e) {
+             if (wafError.message && wafError.message.includes('403')) isBlocked = true;
+           }
+        } else if (wafError.message && wafError.message.includes('403')) {
+           isBlocked = true;
+        }
+      }
+
+      if (isBlocked) {
+        addToast({ type: 'error', message: 'Bloqueo de seguridad: Carga maliciosa detectada.' });
+        setLoading(false);
+        navigate('/bloqueado', { replace: true });
+        return;
+      }
+    } catch (err) {
+      console.warn('WAF bypassed due to network error');
+    }
+
     const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
