@@ -8,7 +8,7 @@ PARTE 1: PREPARATIVOS (5 minutos)
 ═══════════════════════════════════════════════════════════════════════════════
 
 1.1 REQUISITOS PREVIOS
-   □ Node.js 18+ instalado → npm --version
+   □ Node.js 18+ instalado → pnpm --version
    □ Git instalado
    □ Cuenta GitHub (para repositorio)
    □ Cuenta email válida
@@ -16,7 +16,7 @@ PARTE 1: PREPARATIVOS (5 minutos)
    Verificar:
    ```bash
    node --version    # v18.0.0 o superior
-   npm --version     # 9.0.0 o superior
+   pnpm --version     # 9.0.0 o superior
    git --version     # 2.0.0 o superior
    ```
 
@@ -31,7 +31,7 @@ PARTE 1: PREPARATIVOS (5 minutos)
    cd mi-universidad
    
    # Instalar dependencias
-   npm install
+   pnpm install
    ```
 
 1.3 INSTALAR PAQUETES FALTANTES
@@ -40,7 +40,7 @@ PARTE 1: PREPARATIVOS (5 minutos)
    # @tanstack/react-query, lucide-react, zustand, zod, etc.
    
    # Verificar que tengas todos:
-   npm list | grep -E "supabase|react-query|zustand"
+   pnpm ls | grep -E "supabase|react-query|zustand"
    ```
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -177,19 +177,20 @@ PARTE 3: CONFIGURAR STRIPE (10 minutos)
 PARTE 4: ACTUALIZAR CÓDIGO FRONTEND (10 minutos)
 ═══════════════════════════════════════════════════════════════════════════════
 
-4.1 ARCHIVOS YA CREADOS
-   Los siguientes archivos ya fueron generados para ti:
+4.1 ESTRUCTURA DE ARCHIVOS Y ARQUITECTURA (FEATURE-DRIVEN)
+   El proyecto ha migrado a una Arquitectura Limpia basada en Features:
+   ✓ src/infrastructure/ (Conexiones como supabase.ts)
+   ✓ src/features/ (auth, catalog, enrollments, billing, admin)
+   ✓ src/shared/ (Componentes y utilidades compartidas)
+   
+   Archivos clave ya generados:
    ✓ supabase/schema_v2_OPTIMIZADO.sql
-   ✓ src/lib/validation.ts (esquemas Zod)
-   ✓ src/services/enrollments.service.ts
-   ✓ src/services/useNotificationStore.ts
    ✓ ARQUITECTURA_COMPLETA.md / PATRONES.md
-   ✓ Setup e integraciones reactivas
 
 4.2 INSTALAR DEPENDENCIAS PENDIENTES
    ```bash
-   npm install
-   npm run dev
+   pnpm install
+   pnpm dev
    ```
    Abre http://localhost:5173 en navegador.
    ✓ Debería cargar sin errores. Conservando la sesión del usuario.
@@ -221,6 +222,9 @@ PARTE 5: CREAR EDGE FUNCTIONS (15 minutos)
 
       # Función para recibir avisos de Stripe (Webhooks)
       supabase functions new stripe-webhook
+      
+      # Función de Firewall (WAF) contra inyecciones SQL
+      supabase functions new waf-guard
    ```
    
    Edita: supabase/functions/enroll/index.ts
@@ -240,14 +244,18 @@ PARTE 5: CREAR EDGE FUNCTIONS (15 minutos)
 5.4 DEPLOY FUNCTIONS
    ```bash
    # Primero, añade secrets
-      # 1. Configurar la Llave Secreta
-      supabase secrets set STRIPE_SECRET_KEY=sk_test_51TDH2nC4CflHc9rqmj9TCQZXoojfoix5TWWNblX5C530YYO8ixuCklrr4l1Urq7f8vdlioNKxLasEUgE6H9RGKoW00Tmwd7kdD
+      # 1. Configurar la Llave Secreta Stripe
+      supabase secrets set STRIPE_SECRET_KEY=sk_test_...
 
       # 2. Configurar el Secreto de Firma del Webhook
-      supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_gLX0dcoDD6X2Wgp75GSvavbTT0B8kp7X
+      supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
 
       # 3. Configurar la URL del Frontend
       supabase secrets set FRONTEND_URL=http://localhost:5173
+      
+      # 4. Configurar clave para WAF-Guard (Service Role)
+      supabase secrets set SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_aqui
+      supabase secrets set SUPABASE_URL=https://xxxxxxx.supabase.co
    
    # Verifica que se añadieron
    supabase secrets list
@@ -255,6 +263,7 @@ PARTE 5: CREAR EDGE FUNCTIONS (15 minutos)
    # Deploy
    supabase functions deploy enroll
    supabase functions deploy webhooks/stripe
+   supabase functions deploy waf-guard
    
    # Verifica
    supabase functions list
@@ -266,7 +275,7 @@ PARTE 6: PROBAR LA APLICACIÓN (10 minutos)
 
 6.1 INICIAR SERVIDOR LOCAL
    ```bash
-   npm run dev
+   pnpm dev
    ```
    
    Abre: http://localhost:5173
@@ -374,10 +383,10 @@ SOLUCIÓN:
 ├─ Verifica que .env.local tiene:
 │  ├─ VITE_SUPABASE_URL (con https://)
 │  └─ VITE_SUPABASE_ANON_KEY
-├─ Reinicia npm run dev
+├─ Reinicia pnpm dev
 └─ Limpia node_modules si persiste:
    rm -rf node_modules
-   npm install
+   pnpm install
 
 PROBLEMA: "Table does not exist"
 SOLUCIÓN:
@@ -418,23 +427,24 @@ STRIPE:
  ☑ sk_test disponible para Edge Functions
 
 CÓDIGO:
- ☑ npm install completado
- ☑ npm run dev funciona (localhost:5173)
+ ☑ pnpm install completado
+ ☑ pnpm dev funciona (localhost:5173)
  ☑ tipos.ts / interfaces actualizadas
  ☑ Cliente Supabase integrado
  ☑ TanStack Query implementado (Caché Centralizada)
 
-ARQUITECTURA (PATRONES.md):
- ☑ Factory Method dispuesto en Pagos
- ☑ Abstract Factory dispuesto para Sidebar Roles
- ☑ Builder dispuesto para Filtros de Cursos
- ☑ Prototype dispuesto para Clonar Cursos
+ARQUITECTURA (FEATURE-DRIVEN & CLEAN ARCHITECTURE):
+ ☑ Código estructurado en features/, shared/ e infrastructure/
+ ☑ Componentes de UI separados de Lógica de Negocio
+ ☑ Patrones de diseño aplicados correctamente en sus dominios
+ ☑ Protección WAF Service Singleton configurado en Frontend
 
 EDGE FUNCTIONS:
  ☑ Supabase CLI instalado
  ☑ enroll function creada y deployed
  ☑ webhooks/stripe creada y deployed
- ☑ Secrets configurados en Supabase
+ ☑ waf- (Firewall) creada y configurada
+ ☑ Secrets configurados en Supabase (Incluyendo Service Role para WAF)
 
 TESTING:
  ☑ Datos de prueba insertados
@@ -451,11 +461,11 @@ TESTING:
 3. Edge Function falla → Revisa supabase functions logs:
    supabase functions logs enroll
 4. Stripe webhook → Testea con Stripe CLI:
-   npm install -g @stripe/stripe-cli
+   pnpm install -g @stripe/stripe-cli
    stripe listen --forward-to localhost:3000/webhooks
 
 ═══════════════════════════════════════════════════════════════════════════════
 Documento compilado para: Versión de Producción
-Última actualización: 2026-03-17
-Archivos asociados: ARQUITECTURA_COMPLETA.md
+Última actualización: 2026-06-05
+Archivos asociados: ARQUITECTURA_COMPLETA.md, PATRONES.md
 ═══════════════════════════════════════════════════════════════════════════════
