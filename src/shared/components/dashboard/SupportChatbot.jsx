@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, User, Loader2 } from 'lucide-react';
-import { aiSupportService } from '../../services/aiAdapter';
+import { aiSupportService } from '../../../features/billing/infrastructure/aiAdapter';
 
 export default function SupportChatbot({ onClose }) {
   const [messages, setMessages] = useState([
