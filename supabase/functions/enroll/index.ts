@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import Stripe from "https://esm.sh/stripe?target=deno"
 
+// ─── WAF Guard — Defensa Activa contra SQLi ───────────────────────────────────
+import { runWafCheck } from "../waf-guard/index.ts"
+
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
   apiVersion: '2022-11-15',
   httpClient: Stripe.createFetchHttpClient(),
@@ -16,6 +19,13 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
+
+  // ── FILTRO WAF: Se ejecuta ANTES de cualquier lógica de negocio ─────────
+  // Verifica si la IP está bloqueada y escanea el payload en busca de SQLi.
+  // Si detecta amenaza: retorna 403 y registra el bloqueo. Si no: retorna null.
+  const wafResponse = await runWafCheck(req, "/functions/v1/enroll")
+  if (wafResponse) return wafResponse
+  // ────────────────────────────────────────────────────────────────────────
 
   try {
     const supabaseClient = createClient(
@@ -55,7 +65,7 @@ serve(async (req) => {
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: `${Deno.env.get('FRONTEND_URL')}/success`,
+      success_url: `${Deno.env.get('FRONTEND_URL')}/dashboard/inicio`,
       cancel_url: `${Deno.env.get('FRONTEND_URL')}/courses`,
       metadata: { courseId, userId } // Datos clave para el webhook
     })
