@@ -1,5 +1,6 @@
 import colors from 'tailwindcss/colors';
 
+
 export default {
   content: [
     "./index.html",
@@ -9,4 +10,4 @@ export default {
     extend: {},
   },
   plugins: [],
-}
+};
