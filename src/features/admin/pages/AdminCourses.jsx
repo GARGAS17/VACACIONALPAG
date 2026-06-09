@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../infrastructure/supabase';
-import { Plus, Search, Pencil, Trash2, AlertTriangle, Users, DollarSign, Image, Upload, Copy, Wand2, Loader2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, AlertTriangle, Users, DollarSign, Image, Upload, Copy, Wand2, Loader2, RotateCcw, Archive } from 'lucide-react';
 import { useNotificationStore } from '../../../shared/store/useNotificationStore';
 import { aiCourseCopilot } from '../../billing/infrastructure/aiAdapter';
+import { CourseContext } from '../domain/CourseState';
+import { CourseCaretaker } from '../domain/CourseMemento';
+import { CourseSubject, ToastNotificationObserver, AuditLogObserver } from '../domain/CourseObserver';
 
 const statusColors = {
   published: 'bg-green-500/15 text-green-400',
@@ -25,6 +28,11 @@ export const AdminCourses = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isToggling, setIsToggling] = useState(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  // Patrones de diseño refs
+  const caretakerRef = useRef(new CourseCaretaker());
+  const subjectRef = useRef(new CourseSubject());
+  const [historyCount, setHistoryCount] = useState(0); // Forzar re-renders al deshacer o guardar en memento
 
   // Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,12 +151,22 @@ export const AdminCourses = () => {
       };
 
       if (selectedCourse && selectedCourse.id) {
+        // MEMENTO: Guardar copia de seguridad antes de modificar
+        caretakerRef.current.save(selectedCourse.id, selectedCourse);
+        setHistoryCount(prev => prev + 1);
+
         const { error } = await supabase
           .from('courses')
           .update(payload)
           .eq('id', selectedCourse.id);
         if (error) throw error;
         setCourses(prev => prev.map(c => c.id === selectedCourse.id ? { ...c, ...payload, professors: professors.find(p => p.id === formData.professor_id) } : c));
+        
+        // OBSERVER: Notificar si el status cambió
+        if (selectedCourse.status !== payload.status) {
+          subjectRef.current.notify(payload.status, { ...selectedCourse, ...payload });
+        }
+
         addToast({ message: 'Curso actualizado', type: 'success' });
       } else {
         const { data, error } = await supabase
@@ -219,19 +237,94 @@ export const AdminCourses = () => {
   useEffect(() => {
     fetchCourses();
     fetchAuxData();
+
+    // Registrar observadores
+    const toastObserver = new ToastNotificationObserver(addToast);
+    const auditObserver = new AuditLogObserver();
+    subjectRef.current.subscribe(toastObserver);
+    subjectRef.current.subscribe(auditObserver);
+
+    return () => {
+      subjectRef.current.unsubscribe(toastObserver);
+      subjectRef.current.unsubscribe(auditObserver);
+    };
   }, []);
 
-  const toggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === 'published' ? 'draft' : 'published';
-    setIsToggling(id);
+  // === 🔄 USO DEL PATRÓN STATE (Ciclo de vida) y OBSERVER ===
+  const handleTransitionStatus = async (course, targetStatus) => {
+    const context = new CourseContext(course.status);
     try {
-      const { error } = await supabase.from('courses').update({ status: newStatus }).eq('id', id);
+      let nextStatus;
+      if (targetStatus === 'published') {
+        nextStatus = context.publish();
+      } else if (targetStatus === 'archived') {
+        nextStatus = context.archive();
+      } else if (targetStatus === 'draft') {
+        nextStatus = context.draft();
+      }
+
+      setIsToggling(course.id);
+      
+      // Guardar el estado actual en el Memento antes de la transición
+      caretakerRef.current.save(course.id, course);
+      setHistoryCount(prev => prev + 1);
+
+      const { error } = await supabase.from('courses').update({ status: nextStatus }).eq('id', course.id);
       if (error) throw error;
       
-      setCourses(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
-      addToast({ message: `Curso ${newStatus === 'published' ? 'publicado' : 'ocultado'} exitosamente`, type: 'success' });
+      const updatedCourse = { ...course, status: nextStatus };
+      setCourses(prev => prev.map(c => c.id === course.id ? updatedCourse : c));
+      
+      // Notificar observadores
+      subjectRef.current.notify(nextStatus, updatedCourse);
     } catch (err) {
-      addToast({ message: 'Error al cambiar el estado', type: 'error' });
+      addToast({ message: err.message, type: 'error' });
+    } finally {
+      setIsToggling(null);
+    }
+  };
+
+  // === 💾 USO DEL PATRÓN MEMENTO (Deshacer edición) ===
+  const handleUndo = async (courseId) => {
+    const previousState = caretakerRef.current.undo(courseId);
+    if (!previousState) return;
+
+    setHistoryCount(prev => prev + 1);
+
+    try {
+      setIsToggling(courseId);
+      const payload = {
+        title: previousState.title,
+        description: previousState.description,
+        category_id: previousState.category_id,
+        professor_id: previousState.professor_id,
+        price: previousState.price,
+        capacity: previousState.capacity,
+        start_date: previousState.start_date,
+        end_date: previousState.end_date,
+        start_time: previousState.start_time,
+        end_time: previousState.end_time,
+        days_of_week: previousState.days_of_week,
+        schedule: previousState.schedule,
+        location: previousState.location,
+        room_number: previousState.room_number,
+        status: previousState.status,
+        thumbnail_url: previousState.thumbnail_url
+      };
+
+      const { error } = await supabase
+        .from('courses')
+        .update(payload)
+        .eq(courseId);
+
+      if (error) throw error;
+
+      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, ...payload, professors: professors.find(p => p.id === payload.professor_id) } : c));
+      
+      subjectRef.current.notify(payload.status, { id: courseId, ...payload });
+      addToast({ message: 'Cambios revertidos con éxito (Memento restaurado)', type: 'success' });
+    } catch (err) {
+      addToast({ message: 'Error al restaurar estado: ' + err.message, type: 'error' });
     } finally {
       setIsToggling(null);
     }
@@ -361,16 +454,60 @@ export const AdminCourses = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {/* Publish toggle switch inline CSS + Tailwind */}
-                      <div className="flex items-center justify-start">
-                        <button
-                          onClick={() => toggleStatus(course.id, course.status)}
-                          disabled={isToggling === course.id}
-                          className={`w-11 h-6 rounded-full relative transition-colors disabled:opacity-50 border-none cursor-pointer p-0 ${course.status === 'published' ? 'bg-green-500' : 'bg-slate-600'}`}
-                          title={course.status === 'published' ? 'Despublicar' : 'Publicar'}
-                        >
-                          <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${course.status === 'published' ? 'left-[22px]' : 'left-0.5'}`} />
-                        </button>
+                      <div className="flex items-center gap-1.5 justify-start">
+                        {course.status === 'draft' && (
+                          <>
+                            <button
+                              onClick={() => handleTransitionStatus(course, 'published')}
+                              disabled={isToggling === course.id}
+                              className="px-2.5 py-1 bg-green-500/10 hover:bg-green-500 text-green-400 hover:text-white rounded-lg text-xs font-semibold border border-green-500/20 cursor-pointer transition-colors"
+                              title="Publicar curso (State: published)"
+                            >
+                              Publicar
+                            </button>
+                            <button
+                              onClick={() => handleTransitionStatus(course, 'archived')}
+                              disabled={isToggling === course.id}
+                              className="px-2.5 py-1 bg-slate-700/50 hover:bg-slate-600 text-slate-300 rounded-lg text-xs font-semibold border border-slate-600/30 cursor-pointer transition-colors"
+                              title="Archivar curso (State: archived)"
+                            >
+                              Archivar
+                            </button>
+                          </>
+                        )}
+                        {course.status === 'published' && (
+                          <>
+                            <button
+                              onClick={() => handleTransitionStatus(course, 'draft')}
+                              disabled={isToggling === course.id}
+                              className="px-2.5 py-1 bg-yellow-500/10 hover:bg-yellow-500 text-yellow-400 hover:text-white rounded-lg text-xs font-semibold border border-yellow-500/20 cursor-pointer transition-colors"
+                              title="Quitar publicación (State: draft)"
+                            >
+                              Depublicar
+                            </button>
+                            <button
+                              onClick={() => handleTransitionStatus(course, 'archived')}
+                              disabled={isToggling === course.id}
+                              className="px-2.5 py-1 bg-slate-700/50 hover:bg-slate-600 text-slate-300 rounded-lg text-xs font-semibold border border-slate-600/30 cursor-pointer transition-colors"
+                              title="Archivar curso (State: archived)"
+                            >
+                              Archivar
+                            </button>
+                          </>
+                        )}
+                        {course.status === 'archived' && (
+                          <>
+                            <button
+                              onClick={() => handleTransitionStatus(course, 'draft')}
+                              disabled={isToggling === course.id}
+                              className="px-2.5 py-1 bg-yellow-500/10 hover:bg-yellow-500 text-yellow-400 hover:text-white rounded-lg text-xs font-semibold border border-yellow-500/20 cursor-pointer transition-colors"
+                              title="Restaurar a borrador (State: draft)"
+                            >
+                              Restaurar
+                            </button>
+                            <span className="text-[10px] text-slate-500 font-medium">Bloqueado</span>
+                          </>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -380,6 +517,15 @@ export const AdminCourses = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
+                        {caretakerRef.current.hasHistory(course.id) && (
+                          <button
+                            onClick={() => handleUndo(course.id)}
+                            className="p-2 text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-all border-none bg-transparent cursor-pointer"
+                            title="Deshacer última edición (Memento)"
+                          >
+                            <RotateCcw size={15} />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleCloneCourse(course)}
                           className="p-2 text-slate-400 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-all border-none bg-transparent cursor-pointer"
@@ -562,19 +708,33 @@ export const AdminCourses = () => {
                 </div>
               </div>
 
-              {/* Toggle Switch */}
-              <div className="bg-slate-700/30 p-3 rounded-xl flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, status: formData.status === 'published' ? 'draft' : 'published' })}
-                  className={`w-11 h-6 rounded-full relative transition-colors disabled:opacity-50 border-none cursor-pointer p-0 ${formData.status === 'published' ? 'bg-green-600' : 'bg-slate-600'}`}
+              {/* Estado del Curso (State Pattern transition check) */}
+              <div>
+                <label className="block text-slate-300 text-xs font-semibold mb-1.5">Estado del Curso</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => {
+                    const nextVal = e.target.value;
+                    if (selectedCourse && selectedCourse.id) {
+                      try {
+                        const context = new CourseContext(selectedCourse.status);
+                        if (nextVal === 'published') context.publish();
+                        else if (nextVal === 'archived') context.archive();
+                        else if (nextVal === 'draft') context.draft();
+                        setFormData({ ...formData, status: nextVal });
+                      } catch (err) {
+                        addToast({ message: err.message, type: 'error' });
+                      }
+                    } else {
+                      setFormData({ ...formData, status: nextVal });
+                    }
+                  }}
+                  className="w-full px-3.5 py-2.5 bg-slate-700/50 border border-slate-700 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-green-500 cursor-pointer"
                 >
-                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${formData.status === 'published' ? 'left-[22px]' : 'left-0.5'}`} />
-                </button>
-                <div>
-                  <span className="text-slate-200 text-sm font-medium">Borrador</span>
-                  <p className="text-slate-500 text-[11px] m-0">Solo visible para administradores</p>
-                </div>
+                  <option value="draft">Borrador (Draft)</option>
+                  <option value="published">Publicado (Published)</option>
+                  <option value="archived">Archivado (Archived)</option>
+                </select>
               </div>
 
               {/* Action Buttons */}

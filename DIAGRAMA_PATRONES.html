@@ -702,7 +702,91 @@ classDiagram
       </div>
     </section>
 
-    <!-- 13. DIAGRAMA MAESTRO (ARQUITECTURA COMPLETA) -->
+    <!-- 13. PATRÓN MEMENTO -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-12">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl w-full">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #F97316">
+           <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Comportamiento</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #F97316">Memento (Historial de Edición)</h3>
+        <p class="text-white text-sm mb-4">Guarda y restaura el estado previo de un curso en el panel de administración, lo que permite realizar la funcionalidad de "Deshacer" (Undo) sin violar el encapsulamiento de los datos del curso.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ <b>Originator (AdminCourses):</b> Crea un Memento con su estado actual y lo restaura.</li>
+           <li>✓ <b>Memento (CourseMemento):</b> Almacena la copia profunda del estado del curso.</li>
+           <li>✓ <b>Caretaker (CourseCaretaker):</b> Mantiene el historial de mementos y gestiona la pila de deshacer.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction TB
+    class AdminCourses {
+        -caretakerRef: CourseCaretaker
+        +handleSave() void
+        +handleUndo(courseId) void
+    }
+    class CourseMemento {
+        -state: Object
+        +getState() Object
+    }
+    class CourseCaretaker {
+        -mementos: Map
+        +save(courseId, courseState) void
+        +undo(courseId) Object
+        +hasHistory(courseId) Boolean
+    }
+    AdminCourses ..&gt; CourseCaretaker : Usa
+    CourseCaretaker o-- CourseMemento : Almacena historial
+         </div>
+      </div>
+    </section>
+
+    <!-- 14. PATRÓN OBSERVER -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-12">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl w-full">
+        <div class="flex items-center gap-1.5 mb-3" style="color: #10B981">
+           <i data-lucide="eye" class="w-5 h-5"></i>
+           <span class="text-xs font-bold uppercase tracking-wider">Comportamiento</span>
+        </div>
+        <h3 class="text-xl font-bold mb-2 m-0" style="color: #10B981">Observer (Notificación de Eventos)</h3>
+        <p class="text-white text-sm mb-4">Define un canal de comunicación "uno a muchos", de modo que cuando un curso cambia de estado (se publica, despublica o archiva), se notifica automáticamente a los observadores registrados.</p>
+        <ul class="text-white text-xs space-y-1.5">
+           <li>✓ <b>Subject (CourseSubject):</b> Mantiene los observadores y los notifica al ocurrir un evento.</li>
+           <li>✓ <b>Observer (CourseObserver):</b> Interfaz común para actualizar eventos.</li>
+           <li>✓ <b>ToastNotificationObserver:</b> Muestra alertas en pantalla (Toasts) al administrador.</li>
+           <li>✓ <b>AuditLogObserver:</b> Genera registros de auditoría en la consola del desarrollador.</li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-center overflow-auto shadow-inner">
+         <div class="mermaid w-full">
+classDiagram
+    direction TB
+    class CourseObserver {
+        &lt;&lt;interface&gt;&gt;
+        +update(event, course) void
+    }
+    class CourseSubject {
+        -observers: Array
+        +subscribe(observer) void
+        +unsubscribe(observer) void
+        +notify(event, course) void
+    }
+    class ToastNotificationObserver {
+        -addToast: Function
+        +update(event, course) void
+    }
+    class AuditLogObserver {
+        +update(event, course) void
+    }
+    CourseObserver &lt;|.. ToastNotificationObserver : Implementa
+    CourseObserver &lt;|.. AuditLogObserver : Implementa
+    CourseSubject o-- CourseObserver : Notifica a
+         </div>
+      </div>
+    </section>
+
+    <!-- 15. DIAGRAMA MAESTRO (ARQUITECTURA COMPLETA) -->
     <section id="master-diagram-section" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 overflow-auto shadow-inner">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-1.5 text-pink-400">
@@ -810,8 +894,12 @@ classDiagram
         }
         class AdminCourses_View {
             +selectedCourse : Object
+            +caretakerRef : CourseCaretaker
+            +subjectRef : CourseSubject
             +handleCloneCourse() void
             +handleSave() void
+            +handleTransitionStatus(course, targetStatus) void
+            +handleUndo(courseId) void
         }
         class MenuComponent {
             &lt;&lt;abstract&gt;&gt;
@@ -913,10 +1001,41 @@ classDiagram
         class CourseState {
             &lt;&lt;interface&gt;&gt;
             +publish()
-            +enroll()
+            +archive()
+            +draft()
         }
         class CourseContext {
             +state: CourseState
+            +publish() String
+            +archive() String
+            +draft() String
+        }
+        class CourseMemento {
+            -state: Object
+            +getState() Object
+        }
+        class CourseCaretaker {
+            -mementos: Map
+            +save(courseId, courseState) void
+            +undo(courseId) Object
+            +hasHistory(courseId) Boolean
+        }
+        class CourseObserver {
+            &lt;&lt;interface&gt;&gt;
+            +update(event, course) void
+        }
+        class CourseSubject {
+            -observers: Array
+            +subscribe(observer) void
+            +unsubscribe(observer) void
+            +notify(event, course) void
+        }
+        class ToastNotificationObserver {
+            -addToast: Function
+            +update(event, course) void
+        }
+        class AuditLogObserver {
+            +update(event, course) void
         }
         class EnrollmentFacade {
             +processEnrollment()
@@ -965,6 +1084,12 @@ classDiagram
     MenuGroup o-- MenuComponent : Contiene
     
     %% === RELACIONES: PATRONES -> PATRONES ===
+    CourseContext o-- CourseState : Mantiene estado actual
+    CourseCaretaker o-- CourseMemento : Almacena historial
+    CourseSubject o-- CourseObserver : Notifica eventos
+    CourseObserver &lt;|.. ToastNotificationObserver : Implementa
+    CourseObserver &lt;|.. AuditLogObserver : Implementa
+
     CourseQueryBuilder ..&gt; CoursePrice : Consume
     CoursePrice &lt;|-- BasePrice : Implementa
     CoursePrice &lt;|-- PriceDecorator : Implementa
@@ -1000,6 +1125,9 @@ classDiagram
 
     %% === RELACIONES: PATRONES/VISTAS -> BASE DE DATOS ===
     AdminCourses_View ..&gt; Course : Administra y Prototipa
+    AdminCourses_View ..&gt; CourseContext : Usa para transiciones
+    AdminCourses_View ..&gt; CourseCaretaker : Registra y restaura
+    AdminCourses_View ..&gt; CourseSubject : Notifica
     CourseQueryBuilder ..&gt; Course : Filtra
     ManualAdapter ..&gt; Enrollment : Inserta Fila en
     StripeAdapter ..&gt; Payment : Registra Transacción
@@ -1063,6 +1191,15 @@ classDiagram
     style RealMetricsService fill:#4338ca,stroke:#6366f1,stroke-width:1px
     style MetricsCacheProxy fill:#4338ca,stroke:#6366f1,stroke-width:1px
     style AuditEnrollmentProxy fill:#4338ca,stroke:#6366f1,stroke-width:1px
+    
+    style CourseContext fill:#164e63,stroke:#06b6d4,stroke-width:1px
+    style CourseState fill:#164e63,stroke:#06b6d4,stroke-width:1px
+    style CourseMemento fill:#7c2d12,stroke:#ea580c,stroke-width:1px
+    style CourseCaretaker fill:#7c2d12,stroke:#ea580c,stroke-width:1px
+    style CourseSubject fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style CourseObserver fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style ToastNotificationObserver fill:#064e3b,stroke:#10b981,stroke-width:1px
+    style AuditLogObserver fill:#064e3b,stroke:#10b981,stroke-width:1px
          </div>
     </section>
 
